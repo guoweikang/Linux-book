@@ -1,13 +1,15 @@
-Welcome to Lumache's documentation!
+Welcome to My Linux Book
 ===================================
 
-**Lumache** (/lu'make/) is a Python library for cooks and food lovers
-that creates recipes mixing random ingredients.
-It pulls data from the `Open Food Facts database <https://world.openfoodfacts.org/>`_
-and offers a *simple* and *intuitive* API.
+这是我自己的Linux book，为了组织我自己的学习知识图谱，每章(每个模块)的安排是这样的：
 
-Check out the :doc:`usage` section for further information, including
-how to :ref:`installation` the project.
+ - 理论基础:  涵盖操作系统对应基础、硬件相关特性
+ - Linux设计: Linux 对于该模块的宏观设计，核心结构组织
+ - 代码: 核心代码、关键算法、优秀实践走读
+ - API ：该模块涉及到的核心和对外API
+ - 工具：该模块涉及到的 性能、使用分析工具的使用方法
+
+操作系统前置课程: 计算机基础理论，该学习手册见:xxxxxxxxx
 
 .. note::
 
@@ -18,5 +20,6 @@ Contents
 
 .. toctree::
 
-   usage
-   api
+   操作系统导论(operate_system/operate_system.rst)
+   Linux介绍(linux/linux_introduction.rst)
+   内存子系统(mm.rst)

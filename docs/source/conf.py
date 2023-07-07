@@ -2,9 +2,9 @@
 
 # -- Project information
 
-project = 'Lumache'
-copyright = '2021, Graziella'
-author = 'Graziella'
+project = 'Linux-book'
+copyright = '2023, guoweikang'
+author = 'GuoWeikang'
 
 release = '0.1'
 version = '0.1.0'
