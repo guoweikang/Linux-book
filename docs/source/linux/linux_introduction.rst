@@ -8,16 +8,22 @@ Linux介绍
 本章作为Linux的一个前置介绍，为了保证后续章节的连续性，主要包含: 
 
  - Linux环境准备
+ - Linux开发管理
 
 
 Linux环境准备
 ==============
-后续学习，因为涉及到实际代码，我们有必要准备好以下条件:
+工欲善其事必先利其器
 
- - 能够运行内核的环境
- - 代码开发阅读环境
 
-运行内核的环境
+本小节需要掌握: 
+    - 搭建内核运行环境
+	- 下载编译内核，并安装在运行环境
+	- ctags cscope的安装以及使用(自行学习)
+	- 利用kernel makefile 规则 自动生成索引 以及手动生成索引
+	- 
+
+运行内核环境
 ---------------
 .. note::
 	建议，自己可以准备一个开发板或者是虚拟机这种实际可以把内核跑起来的环境，我们的实验环节，可能会涉及到对代码的修改验证
@@ -26,7 +32,7 @@ Linux环境准备
 	当然，如果你有自己的环境，可以不参考我以下环境准备步骤
 
 树莓派编译环境准备
--------------------
+^^^^^^^^^^^^^^^^^^^
 我的环境参考openeuler社区版本 22.03 SP1  基于内核版本 5.10
 
  - 操作系统安装: https://docs.openeuler.org/zh/docs/22.03_LTS_SP1/docs/Installation/%E5%AE%89%E8%A3%85%E5%87%86%E5%A4%87-1.html
@@ -34,14 +40,17 @@ Linux环境准备
  - 内核交叉编译指南： https://gitee.com/openeuler/raspberrypi/blob/master/documents/%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E5%86%85%E6%A0%B8.md
 
 X86虚拟机编译环境准备
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
+ 使用虚拟机的好处在于：不需要考虑交叉编译，内核可以直接安装在虚拟机， 开发环境可以直接作为测试验证环境
 
   - 操作系统安装: https://ken.io/note/openeuler-virtualmachine-install-by-vmware 
 
+*下载编译内核源码*: 提供了多种内核源码的下载方法：
+	
+	- 通过rpm下载安装: 好处是内核版本和本机发行版一致，可以直接编译安装，缺点是没有git 信息，参考：https://forum.openeuler.org/t/topic/615
+	- 通过开发社区开发: https://ost.51cto.com/posts/15844 
 
-内核编译安装指南
-^^^^^^^^^^^^^^^^^
- 使用虚拟机的好处在于：不需要考虑交叉编译，内核可以直接安装在虚拟机， 开发环境可以直接作为测试验证环境
+上面这两个方法 可以任意选择一个
 
 *安装内核开发必要工具*
 .. code-block:: console
@@ -49,15 +58,9 @@ X86虚拟机编译环境准备
 
     $ sudo dnf install -y rpm-build openssl-devel bc rsync gcc gcc-c++ flex bison m4 elfutils-libelf-devel
 
-*下载内核源码*: 提供了多种内核源码的下载方法：
 	
-	- 通过rpm下载安装: 好处是内核版本和本机发行版一致，可以直接编译安装，缺点是没有git 信息，参考：https://forum.openeuler.org/t/topic/615
-	- 通过开发社区开发: https://ost.51cto.com/posts/15844 
-
-这两个方法 可以任意选择一个
-	
-Linux 阅读环境准备
--------------------
+生成代码索引
+-------------
 专门准备一节介绍linux的代码阅读准备，是因为: 
 
  - Linux 不同于普通的C项目，他的代码非常庞大，我们需要只引用我们关心的代码
@@ -85,12 +88,113 @@ Linux 阅读环境准备
    - *ctags*：Tagbar 插件需要，也可以用来导航，但是没有cscope 好用，只能跳转到函数定义，不能找到所有调用点
    
  
-创建代码索引数据库
-^^^^^^^^^^^^^^^^^^^^
-有两种方法对内核代码创建索引：
- 
- - 手动创建索引
- - 使用内核脚本
+内核脚本生成索引
+^^^^^^^^^^^^^^^^
+:使用内核脚本创建索引文件: 内核提供了 scripts/tags.sh 脚本用于生成索引文件，但是应该通过make cscope  和 make tags 规则去运行该脚本，下面是一个示例
+
+.. note::
+
+    Please参考内核编译指导，建议先自己编译一遍内核,可以加快后续索引文件生成
+
+
+
+.. code-block:: console
+    :linenos:
+
+    $ $ make O=. ARCH=x86_64(arm)  COMPILED_SOURCE=1 cscope tags
+
+
+参数含义: 
+  - *O=.* : 很明显了 输出索引文件的存放位置，如果你不希望他在当前目录下，请使用一个绝对路径，如果在kernel 目录下开发，请忽略
+  - *ARCH=...*: 选择作为索引的CPU 架构， 会决定选择索引 arch/xxx 目录
+  - *SUBARCH=...*： 选择作为索引的子架构，比如board, 如果ARCH=arm SUBARCH=omap2 会选择 arch/arm/mach-omap2/ arch/arm/plat-omap/ 索引
+  - *COMPILED_SOURCE=1*： 只索引编译的文件 如果希望索引没有编译的文件 请忽略  
+  - *cscope&tags*: rule to make cscope/ctags index 
+
+手动创建索引文件
+^^^^^^^^^^^^^^^^
+有些时候，也许 *tags.sh* 工作无法达到你的预期，这个时候 可以通过手动索引，下面的步骤参考来自: https://cscope.sourceforge.net/large_projects.html
+
+首先，需要创建一个 *cscope.files* 文件列出你想要索引的文件
+
+比如可以通过以下命令，列出索引文件 以及只列出 arch/arm 以及 OMAP platform 的文件 
+
+.. code-block:: console
+    :linenos:
+
+    $find    $dir                                          \
+        -path "$dir/arch*"               -prune -o    \
+        -path "$dir/tmp*"                -prune -o    \
+        -path "$dir/Documentation*"      -prune -o    \
+        -path "$dir/scripts*"            -prune -o    \
+        -path "$dir/tools*"              -prune -o    \
+        -path "$dir/include/config*"     -prune -o    \
+        -path "$dir/usr/include*"        -prune -o    \
+        -type f                                       \
+        -not -name '*.mod.c'                          \
+        -name "*.[chsS]" -print > cscope.files
+    $find    $dir/arch/arm                                 \
+        -path "$dir/arch/arm/mach-*"     -prune -o    \
+        -path "$dir/arch/arm/plat-*"     -prune -o    \
+        -path "$dir/arch/arm/configs"    -prune -o    \
+        -path "$dir/arch/arm/kvm"        -prune -o    \
+        -path "$dir/arch/arm/xen"        -prune -o    \
+        -type f                                       \
+        -not -name '*.mod.c'                          \
+        -name "*.[chsS]" -print >> cscope.files
+    $find    $dir/arch/arm/mach-omap2/                     \
+        $dir/arch/arm/plat-omap/                      \
+        -type f                                       \
+        -not -name '*.mod.c'                          \
+        -name "*.[chsS]" -print >> cscope.files
+
+以下是一个X86架构的示例 
+
+.. code-block:: console
+    :linenos:
+
+    $find    $dir                                          \
+        -path "$dir/arch*"               -prune -o    \
+        -path "$dir/tmp*"                -prune -o    \
+        -path "$dir/Documentation*"      -prune -o    \
+        -path "$dir/scripts*"            -prune -o    \
+        -path "$dir/tools*"              -prune -o    \
+        -path "$dir/include/config*"     -prune -o    \
+        -path "$dir/usr/include*"        -prune -o    \
+        -type f                                       \
+        -not -name '*.mod.c'                          \
+        -name "*.[chsS]" -print > cscope.files
+    $find    $dir/arch/x86                                 \
+        -path "$dir/arch/x86/configs"    -prune -o    \
+        -path "$dir/arch/x86/kvm"        -prune -o    \
+        -path "$dir/arch/x86/lguest"     -prune -o    \
+        -path "$dir/arch/x86/xen"        -prune -o    \
+        -type f                                       \
+        -not -name '*.mod.c'                          \
+        -name "*.[chsS]" -print >> cscope.files
+
+和脚本类似，如果你只在kernel下开发，替换 *dir=.*, 如果你在其他目录开发，替换为绝对路径 
+
+接下来根据cscope.files 生成索引 
+
+.. code-block:: console
+    :linenos:
+	
+	$ cscope -b -q -k
+
+接下来根据cscope.files 生成ctag索引数据库
+
+.. code-block:: console
+    :linenos:
+	
+	$ ctags -L cscope.files
+
+现在应该拥有以下文件: 
+
+- cscope.in.out
+- cscope.out
+- cscope.po.out
+- tags
 
 
 Linux开发管理
