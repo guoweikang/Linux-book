@@ -12,19 +12,20 @@ Linux介绍
 
 Linux环境准备
 ==============
+后续学习，因为涉及到实际代码，我们有必要准备好以下条件:
 
-.. note::
+ - 能够运行内核的环境
+ - 代码开发阅读环境
 
-   涉及到的命令，主机操作系统默认使用 ubuntu 系列，其他系列操作系统请自行搜索对应的命令
-
-Linux 硬件准备
+运行内核的环境
 ---------------
 .. note::
+	建议，自己可以准备一个开发板或者是虚拟机这种实际可以把内核跑起来的环境，我们的实验环节，可能会涉及到对代码的修改验证
+	ARM64:我使用的是一个树莓派4B的开发板+ openeuler的操作系统
+	X86: 我使用的是openeuler的VMware虚拟机环境
+	当然，如果你有自己的环境，可以不参考我以下环境准备步骤
 
-	建议，自己可以准备一个开发板或者是qemu这种实际可以把内核跑起来的环境，我们的实验环节，可能会涉及到对代码的修改验证
-	我自己使用的是一个树莓派4B的开发板+ openeuler的操作系统，如果你有其他开发环境，可以不参考我对于这部分的步骤
-
-Linux 编译环境准备
+树莓派编译环境准备
 -------------------
 我的环境参考openeuler社区版本 22.03 SP1  基于内核版本 5.10
 
@@ -32,7 +33,30 @@ Linux 编译环境准备
  - 树莓派使用指南: https://gitee.com/openeuler/raspberrypi/blob/master/documents/%E6%A0%91%E8%8E%93%E6%B4%BE%E4%BD%BF%E7%94%A8.md
  - 内核交叉编译指南： https://gitee.com/openeuler/raspberrypi/blob/master/documents/%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E5%86%85%E6%A0%B8.md
 
-Linux 开发环境准备
+X86虚拟机编译环境准备
+----------------------
+
+  - 操作系统安装: https://ken.io/note/openeuler-virtualmachine-install-by-vmware 
+
+
+内核编译安装指南
+^^^^^^^^^^^^^^^^^
+ 使用虚拟机的好处在于：不需要考虑交叉编译，内核可以直接安装在虚拟机， 开发环境可以直接作为测试验证环境
+
+*安装内核开发必要工具*
+.. code-block:: console
+    :linenos:
+
+    $ sudo dnf install -y rpm-build openssl-devel bc rsync gcc gcc-c++ flex bison m4 elfutils-libelf-devel
+
+*下载内核源码*: 提供了多种内核源码的下载方法：
+	
+	- 通过rpm下载安装: 好处是内核版本和本机发行版一致，可以直接编译安装，缺点是没有git 信息，参考：https://forum.openeuler.org/t/topic/615
+	- 通过开发社区开发: https://ost.51cto.com/posts/15844 
+
+这两个方法 可以任意选择一个
+	
+Linux 阅读环境准备
 -------------------
 专门准备一节介绍linux的代码阅读准备，是因为: 
 
