@@ -87,7 +87,29 @@ X86虚拟机编译环境准备
    - *cscope*：主要用于导航代码，例如在函数之间完成切换，能够找到符号的定义以及所有调用
    - *ctags*：Tagbar 插件需要，也可以用来导航，但是没有cscope 好用，只能跳转到函数定义，不能找到所有调用点
    
- 
+cscope 常用命令（vim 指令界面使用）： cs find c|d|e|f|g|i|s|t name
+
++----------+---------------------------------------+
+| 命令 | 说明 |
++==========+========================================+
+|s   |  查找符号(变量)   |
++----------+---------------------------------------+
+| g| 查找定义    |
++-----+---------------------------------------+
+|  d |  查找本函数调用函数  |
++----------+---------------------------------------+
+|  c |  查找调用者   |
++----------+---------------------------------------+
+|  t  |  查找字符串 |
++----------+---------------------------------------+
+|  f | 查找文件  |
++----------+---------------------------------------+
+|  i | 查找包含本文件的文件 |
++----------+---------------------------------------+
+
+
+
+
 内核脚本生成索引
 ^^^^^^^^^^^^^^^^
 :使用内核脚本创建索引文件: 内核提供了 scripts/tags.sh 脚本用于生成索引文件，但是应该通过make cscope  和 make tags 规则去运行该脚本，下面是一个示例
@@ -198,6 +220,9 @@ X86虚拟机编译环境准备
 
 VIM配置
 --------
+
+基本配置
+^^^^^^^^^^
 首先配置80个字符长度限制 因为内核编码要求每行不应该超过80个字符
 修改~/.vimrc 增加： 
 
@@ -210,6 +235,7 @@ VIM配置
 	highlight ColorColumn ctermbg=Black ctermfg=DarkRed
 
 内核编码风格要求 行尾不应该有空白字符 请添加: 
+
 .. code-block:: console
     :linenos:
 	
@@ -226,6 +252,146 @@ VIM配置
 
 .. image:: ./images/1.png
  :width: 400px
+ 
+vim插件管理
+^^^^^^^^^^^^^
+推荐使用pathogen作为插件管理: https://github.com/tpope/vim-pathogen  安装参考: 
+
+.. code-block:: console
+    :linenos:
+
+	$ mkdir -p ~/.vim/autoload ~/.vim/bundle && \
+	$ curl -LSso ~/.vim/autoload/pathogen.vim https://tpo.pe/pathogen.vim
+	
+修改~/.vimrc 增加： 
+
+.. code-block:: console
+    :linenos:
+	
+	execute pathogen#infect()
+	syntax on
+	filetype plugin indent on
+	
+安装kernelsty插件
+^^^^^^^^^^^^^^^^^^
+后面章节会介绍linux 编码风格，在这里我们先安装遵循内核编码风格的vim 插件
+
+.. code-block:: console
+    :linenos:
+	
+	$cd ~/.vim/bundle &&  git clone git@github.com:vivien/vim-linux-coding-style.git
+	
+如果只希望对某些目录下代码应用kernel 风格，请在vimrc 中增加: 
+
+.. code-block:: console
+    :linenos:
+	
+	let g:linuxsty_patterns = [ "/usr/src/", "/linux" ]
+	
+安装NERDTree插件
+^^^^^^^^^^^^^^^^^
+NERDTree时VIM的文件系统浏览器 使用该插件，用户可以直观地浏览复杂的目录层次结构，快速打开文件进行读取或编辑，并执行基本的文件系统操作。
+
+.. code-block:: console
+    :linenos:
+	
+	$ git clone https://github.com/preservim/nerdtree.git ~/.vim/bundle/nerdtree
+
+配置vimrc：
+
+ - 配置自动开启和自动退出
+ - 配置F3 启动和隐藏目录树
+ 
+.. code-block:: console
+    :linenos:
+	
+	" Exit Vim if NERDTree is the only window remaining in the only tab.
+	autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
+	" Start NERDTree and put the cursor back in the other window.
+	autocmd VimEnter * NERDTree | wincmd p
+	nnoremap <F3> :NERDTreeMirror<CR>
+	nnoremap <F3> :NERDTreeMirror<CR>
+
+
+
+基本操作：以下命令都是在NEERDTREE页面操作
+
++----------+---------------------------------------+
+| 命令 | 说明 |
++==========+========================================+
+|  ?   |  打开或者隐藏帮助面板   |
++----------+---------------------------------------+
+| 上下左右 | 选择文件或者目录    |
++-----+---------------------------------------+
+|  回车 |  展开目录/打开文件(退出上个文件)  |
++----------+---------------------------------------+
+|  ctrl+w  |  两次 在目录树和文件之前切换   |
++----------+---------------------------------------+
+|  t  |  以标签形式打开一个文件  |
++----------+---------------------------------------+
+|  gt  | 标签之前切换  |
++----------+---------------------------------------+
+|  i/s  | 分割窗口打开 |
++----------+---------------------------------------+
+
+安装tagbar插件
+^^^^^^^^^^^^^^^^^
+Tagbar 是一个 Vim 插件，它提供了一种简单的方法来浏览当前文件的标签并概述其结构。它通过创建一个侧边栏来显示当前文件的 ctags 生成的标签（按其范围排序）来实现此目的。这意味着，例如 C++ 中的方法显示在定义它们的类下。
+
+
+.. code-block:: console
+    :linenos:
+	
+	$ git clone git@github.com:preservim/tagbar.git ~/.vim/bundle/tagbar
+
+配置vimrc：
+
+ - 配置F8 启动和隐藏tagbar
+ 
+.. code-block:: console
+    :linenos:
+	
+	nmap <F8> :TagbarToggle<CR>
+
+安装vim airline插件
+^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+    :linenos:
+	
+	$ git clone git@github.com:vim-airline/vim-airline ~/.vim/bundle/vim-airline
+
+安装语法检查syntastic
+^^^^^^^^^^^^^^^^^^^^^
+
+
+.. code-block:: console
+    :linenos:
+	
+	$ cd ~/.vim/bundle &&  git clone git@github.com:vim-syntastic/syntastic.git
+
+
+安装YCM 补全插件
+^^^^^^^^^^^^^^^^^^^^^
+YCM 需要更高版本vim和python 支持 从源码升级： 
+
+.. code-block:: console
+    :linenos:
+	
+	$ git clone https://github.com/vim/vim.git
+	$ cd vim/src
+	$ ./configure --with-features=huge --enable-python3interp
+	$ make
+	$ sudo make install
+
+安装插件
+.. code-block:: console
+    :linenos:
+	
+	$ git clone git@github.com:ycm-core/YouCompleteMe.git ~/.vim/bundle/YouCompleteMe
+	$ cd  ~/.vim/bundle/YouCompleteMe 
+    $ ./install.py --clangd-completer --verbose
+
 
 Linux开发指导
 ==============
