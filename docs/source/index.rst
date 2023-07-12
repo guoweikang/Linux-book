@@ -19,7 +19,7 @@ Contents
 --------
 
 .. toctree::
-
-   操作系统导论(operate_system/operate_system.rst)
+   
    Linux介绍(linux/linux_introduction.rst)
+   操作系统导论(perate_system/operate_system.rst)
    内存子系统(mm.rst)

@@ -7,11 +7,11 @@ Linux介绍
 
 本章作为Linux的一个前置介绍，为了保证后续章节的连续性，主要包含: 
 
- - Linux环境准备
- - Linux开发管理
+ - Linux开发环境
+ - Linux开发指导
 
 
-Linux环境准备
+Linux开发环境
 ==============
 工欲善其事必先利其器
 
@@ -24,7 +24,7 @@ Linux环境准备
 	- 
 
 运行内核环境
----------------
+-------------
 .. note::
 	建议，自己可以准备一个开发板或者是虚拟机这种实际可以把内核跑起来的环境，我们的实验环节，可能会涉及到对代码的修改验证
 	ARM64:我使用的是一个树莓派4B的开发板+ openeuler的操作系统
@@ -80,7 +80,7 @@ X86虚拟机编译环境准备
 .. code-block:: console
     :linenos:
 
-    $ sudo apt install cscope exuberant-ctags
+    $ sudo dnf install -y cscope exuberant-ctags
 
 :扩展:
    
@@ -196,10 +196,40 @@ X86虚拟机编译环境准备
 - cscope.po.out
 - tags
 
+VIM配置
+--------
+首先配置80个字符长度限制 因为内核编码要求每行不应该超过80个字符
+修改~/.vimrc 增加： 
 
-Linux开发管理
+.. code-block:: console
+    :linenos:
+	
+	" 80 characters line
+	set colorcolumn=81
+	"execute "set colorcolumn=" . join(range(81,335), ',')
+	highlight ColorColumn ctermbg=Black ctermfg=DarkRed
+
+内核编码风格要求 行尾不应该有空白字符 请添加: 
+.. code-block:: console
+    :linenos:
+	
+	" Highlight trailing spaces
+	" http://vim.wikia.com/wiki/Highlight_unwanted_spaces
+	highlight ExtraWhitespace ctermbg=red guibg=red
+	match ExtraWhitespace /\s\+$/
+	autocmd BufWinEnter * match ExtraWhitespace /\s\+$/
+	autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
+	autocmd InsertLeave * match ExtraWhitespace /\s\+$/
+	autocmd BufWinLeave * call clearmatches()
+
+配置完成之后，下面是一个显示测试
+
+.. image:: ./images/1.png
+ :width: 400px
+
+Linux开发指导
 ==============
-实际上不想在这章过多介绍linux，因为本意是想尽可能脱离linux束缚，重点整理操作系统，不过由于工作需要，还有不得不面对linux可能是长期需要面对的内核，所以还是把linux和操作系统知识一起维护把
+本节主要介绍内核开发必须要了解的一些知识
 
 内核版本
 ----------
