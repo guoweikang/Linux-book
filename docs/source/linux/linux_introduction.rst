@@ -21,16 +21,27 @@ Linux开发环境
 	- 下载编译内核，并安装在运行环境
 	- ctags cscope的安装以及使用(自行学习)
 	- 利用kernel makefile 规则 自动生成索引 以及手动生成索引
-	- 
 
 运行内核环境
 -------------
 .. note::
 	建议，自己可以准备一个开发板或者是虚拟机这种实际可以把内核跑起来的环境，我们的实验环节，可能会涉及到对代码的修改验证
-	ARM64:我使用的是一个树莓派4B的开发板+ openeuler的操作系统
-	X86: 我使用的是openeuler的VMware虚拟机环境
+	- ARM64:我使用的是一个树莓派4B的开发板+ openeuler的操作系统 用于测试ARM
+ 	- X86: 我使用的是openeuler的VMware虚拟机环境 用于追踪社区代码
+	- QEMU：我是用的是最新的linux next代码 用于追踪主线最新的代码
 	当然，如果你有自己的环境，可以不参考我以下环境准备步骤
 
+
+安装内核开发必要工具
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+    :linenos:
+
+    $ sudo dnf install -y rpm-build openssl-devel bc rsync gcc gcc-c++ flex bison m4 elfutils-libelf-devel
+
+	
+	
 树莓派编译环境准备
 ^^^^^^^^^^^^^^^^^^^
 我的环境参考openeuler社区版本 22.03 SP1  基于内核版本 5.10
@@ -39,7 +50,7 @@ Linux开发环境
  - 树莓派使用指南: https://gitee.com/openeuler/raspberrypi/blob/master/documents/%E6%A0%91%E8%8E%93%E6%B4%BE%E4%BD%BF%E7%94%A8.md
  - 内核交叉编译指南： https://gitee.com/openeuler/raspberrypi/blob/master/documents/%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E5%86%85%E6%A0%B8.md
 
-X86虚拟机编译环境准备
+发行版开发环境准备
 ^^^^^^^^^^^^^^^^^^^^^^
  使用虚拟机的好处在于：不需要考虑交叉编译，内核可以直接安装在虚拟机， 开发环境可以直接作为测试验证环境
 
@@ -49,16 +60,49 @@ X86虚拟机编译环境准备
 	
 	- 通过rpm下载安装: 好处是内核版本和本机发行版一致，可以直接编译安装，缺点是没有git 信息，参考：https://forum.openeuler.org/t/topic/615
 	- 通过开发社区开发: https://ost.51cto.com/posts/15844 
+	- 本地基于make安装: https://openanolis.cn/sig/Cloud-Kernel/doc/607587039726485317?preview=
 
-上面这两个方法 可以任意选择一个
+QEMU开发环境准备
+^^^^^^^^^^^^^^^^^^
 
-*安装内核开发必要工具*
+:QEMU环境准备:
+我是在虚拟机嵌套虚拟机，需要开启vmware 支持VT，在虚拟机设置->处理器->虚拟化引擎
+遇到问题参考: https://blog.csdn.net/qq_46499134/article/details/124231658
+
+.. code-block:: console
+    :linenos:
+	$ sudo dnf groupinstall "Virtualization Host"
+    $ sudo dnf intall qemu-kvm
+
+:代码下载: 
+
 .. code-block:: console
     :linenos:
 
-    $ sudo dnf install -y rpm-build openssl-devel bc rsync gcc gcc-c++ flex bison m4 elfutils-libelf-devel
-
+	$ git clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+	或者使用国内源
+	$ git clone https://mirrors.tuna.tsinghua.edu.cn/git/linux.git
+	$ git remote add linux-next https://mirrors.tuna.tsinghua.edu.cn/git/linux-next.git
+	切换到next tree
+	$ git fetch  linux-next 
+	$ git fetch --tags linux-next
+	$ git tag -l "next-*" | tail
+	$ git checkout -b {my_local_branch} next-(latest)
+	关于next tree 在后面会有介绍，如果不想使用next tree ，直接使用主线即可
 	
+:配置内核是能GDB: 
+.. code-block:: console
+    :linenos:
+	$  make ARCH=x86_64 x86_64_defconfig (配置内核)
+	$ make ARCH=x86_64 menuconfig (参考 https://www.kernel.org/doc/html/next/dev-tools/gdb-kernel-debugging.html) 
+
+:编译内核:
+    $ make -j8 
+	
+
+上面这三个方法 可以任意选择一个
+
+
 生成代码索引
 -------------
 专门准备一节介绍linux的代码阅读准备，是因为: 
@@ -361,17 +405,7 @@ Tagbar 是一个 Vim 插件，它提供了一种简单的方法来浏览当前�
 	
 	$ git clone git@github.com:vim-airline/vim-airline ~/.vim/bundle/vim-airline
 
-安装语法检查syntastic
-^^^^^^^^^^^^^^^^^^^^^
-
-
-.. code-block:: console
-    :linenos:
-	
-	$ cd ~/.vim/bundle &&  git clone git@github.com:vim-syntastic/syntastic.git
-
-
-安装YCM 补全插件
+补全插件：YCM
 ^^^^^^^^^^^^^^^^^^^^^
 YCM 需要更高版本vim和python 支持 从源码升级： 
 
@@ -384,7 +418,8 @@ YCM 需要更高版本vim和python 支持 从源码升级：
 	$ make
 	$ sudo make install
 
-安装插件
+:安装插件:
+
 .. code-block:: console
     :linenos:
 	
@@ -392,8 +427,40 @@ YCM 需要更高版本vim和python 支持 从源码升级：
 	$ cd  ~/.vim/bundle/YouCompleteMe 
     $ ./install.py --clangd-completer --verbose
 
+:生成补全:
 
-Linux开发指导
+.. code-block:: console
+    :linenos:
+	
+	$ git clone https://github.com/rdnetto/YCM-Generator.git
+	$ cd YCM-Generator
+	$ ./config_gen.py kernel_dir
+
+
+配置vimrc:关闭自动加载提示
+
+.. code-block:: console
+    :linenos:
+	
+	let g:ycm_confirm_extra_conf = 1
+
+
+VIM风格
+^^^^^^^^^^^^
+配置vimrc：
+
+.. code-block:: console
+    :linenos:
+	
+	$ set t_Co=256
+
+支持hybrid 风格: https://github.com/w0ng/vim-hybrid
+
+
+到目前，kernel开发环境我们算是准备完成了
+
+
+Linux开发指南
 ==============
 本节主要介绍内核开发必须要了解的一些知识
 
@@ -509,12 +576,12 @@ Linux开发指导
    如果你使用的是发行版操作系统，可能他使用的内核版本并不在社区长期版本列表，但是发行商一般也有自己对应版本的长期维护时间，可以通过 *uname -r* 查看你是用的内核版本
 
 
-Linux补丁管理
---------------
+Linux补丁合入机制
+------------------
 通过本节，应该要掌握
 
- - 知道补丁是如何一层一层向上合入的
- - 
+ - 补丁信任链机制
+ - next tree
 
 信任链
 ^^^^^^^^
@@ -533,11 +600,155 @@ Linux补丁管理
 所以，我们如果有补丁要合入，直接发给linux 很明显是不明智的，应该根据自己所处的链条节点，向上发送
 
 
+next tree
+^^^^^^^^^^^
+OK，我们已经指导补丁是通过层层挑选 然后最终进入主线的
+ 
+ - 我应该基于哪个分支开发？
+ - 我的代码会不会和别人冲突？
+
+为了解决上面两个问题，现在主要通过next tree分支，该分支可以理解是下一个内核版本的快照,所有即将或者准备合入主线的补丁，都会先进入这个分支
+
+..note::
+
+	下载地址: https://www.kernel.org/pub/linux/kernel/next/
+ 
+
+内核入门
+^^^^^^^^^^^
+如果是一个新手，刚进入社区，往往不知道如何下手，我给一个建议，请永远使用最新的next分支，并尝试把他在你的环境上运行起来，由于这个分支特性和代码往往都是新的，可能会有一些问题，尝试去解决这些问题
+
+
+邮件列表
+^^^^^^^^
+大量的 Linux 内核开发工作是通过邮件列表完成的。如果不加入至少一个列表，就很难成为社区的一名功能齐全的成员。但 Linux 邮件列表也对开发人员构成了潜在危险，他们面临着被大量电子邮件淹没、违反 Linux 列表上使用的约定或两者兼而有之的风险。
+
+..note::
+
+	  大多数内核邮件列表都在 vger.kernel.org 上运行；主列表可在以下位置找到： http://vger.kernel.org/vger-lists.html
+	  不过，其他地方也有一些列表；其中一些位于 redhat.com/mailman/listinfo
+
+关于邮件使用我们将在后续提交补丁在详细说明
+
+
+
+代码编写规范
+-------------
+本节将研究编码过程。我们将首先了解内核开发人员可能出错的多种方式。然后重点将转向正确做事以及有助于实现这一目标的工具。
+
+
+编码风格
+^^^^^^^^
+强烈建议遵循内核编码风格，实际上还有很多工具可以帮助我们完成格式化工作，但是请习惯他
+
+..note::
+
+	参考: https://docs.kernel.org/process/coding-style.html#codingstyle
+
+
+#ifdef使用
+^^^^^^^^^^^
+#ifdef 建议应该尽可能限制在头文件，条件编译的代码建议限制为函数
+
+锁
+^^^^^^^^^^^
+任何可以被多个线程同时访问的资源（数据结构、硬件寄存器等）都必须受到锁的保护。编写新代码时应牢记这一要求；事后改造锁定是一项相当困难的任务。内核开发人员应该花时间充分了解可用的锁定原语，以便为工作选择正确的工具。缺乏对并发性关注的代码将很难进入主线。
+
+代码检查工具
+-------------------
+
+clang-format使用
+^^^^^^^^^^^^^^^^^^
+内核已经默认在主线提供了符合linux内核编码的clang-format
+
+:clang-format安装: 
+
+.. code-block:: console
+    :linenos:
+	
+	$ sudo dnf install -y clang-tools-extra
+
+..note::
+
+	 clang-format 详细使用说明 参考: 
+	  - https://clang.llvm.org/docs/ClangFormat.html 
+	  - https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
+
+:检查文件和补丁的编码风格: -i 会直接修改文件，不加-i 只是预览
+
+.. code-block:: console
+    :linenos:
+	
+	$ clang-format -i kernel/*.[ch]
+
+
+clang-format 对于内核代码风格 缺少一些支持 常见的为: 
+
+.. code-block:: c
+    :linenos:
+	
+	$ clang-format -i kernel/*.[ch]
+	
+	#define TRACING_MAP_BITS_DEFAULT       11
+	#define TRACING_MAP_BITS_MAX           17
+	#define TRACING_MAP_BITS_MIN           7
+	会被修改为: 
+	#define TRACING_MAP_BITS_DEFAULT 11
+	#define TRACING_MAP_BITS_MAX 17
+	#define TRACING_MAP_BITS_MIN 7
+
+
+.. code-block:: c
+    :linenos:
+	
+	$ clang-format -i kernel/*.[ch]
+	
+	static const struct file_operations uprobe_events_ops = {
+        .owner          = THIS_MODULE,
+        .open           = probes_open,
+        .read           = seq_read,
+        .llseek         = seq_lseek,
+        .release        = seq_release,
+        .write          = probes_write,
+	};
+	会被修改为: 
+	static const struct file_operations uprobe_events_ops = {
+        .owner = THIS_MODULE,
+        .open = probes_open,
+        .read = seq_read,
+        .llseek = seq_lseek,
+        .release = seq_release,
+        .write = probes_write,
+	};
+
+编译告警的启用
+^^^^^^^^^^^^^^^^^^
+请注意，并非所有编译器警告都默认启用。使用“make KCFLAGS=-W”构建内核以开启。
+
+
+
+FRAME_WARN的使用
+^^^^^^^^^^^^^^^^
+Linux 内核线程 会分分配 4Kb或者8Kb的栈 通过设置 CONFIG_FRAME_WARN 可以在编译阶段帮助我们发现 函数实现 是否可能超出了栈大小
+
+DEBUG_OBJECTS的使用
+^^^^^^^^^^^^^^^^^^^^
+DEBUG_OBJECTS 可以用来检查 内核创建的各种对象的生命周期，并在使用出现混乱是 发出告警，如果我们正在写一个模块，并且涉及到对象的管理，可以尝试添加对象调试
+更多信息参考 :ref:`debugobjects`
 
 
 
 
 
+
+
+
+内核提供了几个打开调试功能的配置选项；其中大部分可以在“kernel hacking”子菜单中找到。对于用于开发或测试目的的任何内核，应打开其中几个选项。特别是：
+ 
+ -  获取大于给定数量的堆栈帧的警告。生成的输出可能很详细，但不必担心来自内核其他部分的警告 
+ -  将添加代码来跟踪内核创建的各种对象的生命周期，并在事情发生混乱时发出警告。如果您要添加一个创建（并导出）自己的复杂对象的子系统，请考虑添加对对象调试基础结构的支持。
+ -
 
 
 

@@ -22,3 +22,5 @@ Contents
    
    Linux介绍 <linux/linux_introduction.rst>
    操作系统导论 <operate_system/operate_system.rst>
+   Linux DFX <linux/linux_dfx.rst>
+
