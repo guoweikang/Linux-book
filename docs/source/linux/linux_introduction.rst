@@ -71,9 +71,12 @@ QEMU开发环境准备
 
 .. code-block:: console
     :linenos:
+	
 	$ sudo dnf groupinstall "Virtualization Host"
     $ sudo dnf intall qemu-kvm
-
+	$ sudo dnf install virt-install
+	$ sudo dnf install virt-viewer
+	
 :代码下载: 
 
 .. code-block:: console
@@ -91,19 +94,56 @@ QEMU开发环境准备
 	关于next tree 在后面会有介绍，如果不想使用next tree ，直接使用主线即可
 	
 :配置内核是能GDB: 
+
 .. code-block:: console
     :linenos:
+	
 	$  make ARCH=x86_64 x86_64_defconfig (配置内核)
 	$ make ARCH=x86_64 menuconfig (参考 https://www.kernel.org/doc/html/next/dev-tools/gdb-kernel-debugging.html) 
 
 :编译内核:
+
+.. code-block:: console
+    :linenos:
     $ make -j8 
 	
+:制作根目录:
+	
+.. code-block:: console
+    :linenos:
+	
+    $ git clone git://git.buildroot.net/buildroot
+	$ make menuconfig （Target Options -> Target Architecture →x86_64 Filesystem images → ext2/3/4 root file system ）
+	$ make -j8
+	$ qemu-img convert -f raw -O qcow2 output/images/rootfs.ext2 rootfs.qcow2
 
-上面这三个方法 可以任意选择一个
+
+:现在已经拥有:
+
+  - 内核image : arch/x86/boot/bzImage
+  - rootfs： buildroot/output/images/rootfs.ext2
+  
+:启动虚拟机:
+
+.. code-block:: console
+    :linenos:
+	
+	$ virt-install --name my_guest_os --import --disk path=/home/guoweikang/code/buildroot/output/images/rootfs.qcow2,format=qcow2 --memory 2048 --vcpus 1 --boot kernel=./arch/x86/boot/bzImage,kernel_args="root=/dev/sda  rw console=ttyS0,115200 acpi=off nokaslr"   --graphics none --serial pty --console pty,target_type=serial
+
+参数解析： 
+
+   - import: 表示跳过虚拟机安装，需要跟上 disk参数，从磁盘启动
+   - disk: path 指定虚拟机启动磁盘
+   - memory： 指定虚拟机内存(Mib)
+   - vcpus： 指定cpu数量
+   - boot: 指定引导参数 
+   - graphics: 不分配图形控制 
+   - serial: 指定虚拟机的串行设备 使用pty 
+   - console: 在虚拟机和主机之间建立文本控制台
 
 
-生成代码索引
+
+代码索引
 -------------
 专门准备一节介绍linux的代码阅读准备，是因为: 
 

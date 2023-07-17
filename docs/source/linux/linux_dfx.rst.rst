@@ -8,6 +8,12 @@ debugobjects
 
 通过CONFIG_DEBUG_OBJECTS 可以开启对象生命周期监控
 
+
+设计
+---------
+
+
+
 如何使用
 ---------
 
