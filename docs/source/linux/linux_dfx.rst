@@ -3,6 +3,7 @@ LinuxDFX
 ==========
 
 .. _debugobjects:
+
 debugobjects
 =============
 
@@ -64,6 +65,7 @@ debugobjects
 堆栈上的对象，必须在该对象的生命周期(代码块) 退出之前， 调用debug_object_free() 从跟踪器删除堆栈上的对象，否则会导致跟踪错误
 
 :debug_object_activate:
+
 调用真实对象的激活函数时 需要调用此函数 
 
  
@@ -71,6 +73,7 @@ debugobjects
 ------
 
 .. _实验debug_objects_stats:
+
 实验1:查看debug_objects_stats
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. code-block:: console

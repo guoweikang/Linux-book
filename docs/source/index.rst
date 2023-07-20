@@ -25,6 +25,4 @@ Contents
    KVM子系统 <linux/kvm.rst>
    内核环境大杂烩 <linux/linux_tools_install.rst>
    Linux DFX <linux/linux_dfx.rst>
-   操作系统导论 <operate_system/operate_system.rst>
-
 
