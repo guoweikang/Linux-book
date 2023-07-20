@@ -15,7 +15,6 @@ Linux开发环境
 ==============
 工欲善其事必先利其器
 
-
 本小节需要掌握: 
     - 搭建内核运行环境
 	- 下载编译内核，并安装在运行环境
@@ -141,363 +140,6 @@ QEMU开发环境准备
    - serial: 指定虚拟机的串行设备 使用pty 
    - console: 在虚拟机和主机之间建立文本控制台
 
-
-
-代码索引
--------------
-专门准备一节介绍linux的代码阅读准备，是因为: 
-
- - Linux 不同于普通的C项目，他的代码非常庞大，我们需要只引用我们关心的代码
- - Linux 主干代码支持多个架构，我们只需要关心一个特定架构
- - Linux 有自己编码风格 我们需要使用内核编码风格
- - Linux 不使用标准C库，有自己的库，我们不应该索引libc 的头文件
- - .....
- 
- 本小节会指导完成阅读Linux需要的工具安装，以及索引的使用，无论如何，我假设你已经熟悉这些工具的使用，或者请自己搜索一下这些工具的使用方法 
-
-
-安装代码索引工具
-^^^^^^^^^^^^^^^^
-
-推荐使用 *cscope* 和 *ctags*，安装命令: 
-
-.. code-block:: console
-    :linenos:
-
-    $ sudo dnf install -y cscope exuberant-ctags
-
-:扩展:
-   
-   - *cscope*：主要用于导航代码，例如在函数之间完成切换，能够找到符号的定义以及所有调用
-   - *ctags*：Tagbar 插件需要，也可以用来导航，但是没有cscope 好用，只能跳转到函数定义，不能找到所有调用点
-   
-cscope 常用命令（vim 指令界面使用）： cs find c|d|e|f|g|i|s|t name
-
-+----------+---------------------------------------+
-| 命令     | 说明                                  |
-+==========+=======================================+
-|s         |  查找符号(变量)                       |
-+----------+---------------------------------------+
-| g        | 查找定义                              |
-+----------+---------------------------------------+
-|  d       |  查找本函数调用函数                   |
-+----------+---------------------------------------+
-|  c       |  查找调用者                           |
-+----------+---------------------------------------+
-|  t       |  查找字符串                           |
-+----------+---------------------------------------+
-|  f       | 查找文件                              |
-+----------+---------------------------------------+
-|  i       | 查找包含本文件的文件                  |
-+----------+---------------------------------------+
-
-
-
-
-内核脚本生成索引
-^^^^^^^^^^^^^^^^
-:使用内核脚本创建索引文件: 内核提供了 scripts/tags.sh 脚本用于生成索引文件，但是应该通过make cscope  和 make tags 规则去运行该脚本，下面是一个示例
-
-.. note::
-
-    Please参考内核编译指导，建议先自己编译一遍内核,可以加快后续索引文件生成
-
-
-
-.. code-block:: console
-    :linenos:
-
-    $ $ make O=. ARCH=x86_64(arm)  COMPILED_SOURCE=1 cscope tags
-
-
-参数含义: 
-  - *O=.* : 很明显了 输出索引文件的存放位置，如果你不希望他在当前目录下，请使用一个绝对路径，如果在kernel 目录下开发，请忽略
-  - *ARCH=...*: 选择作为索引的CPU 架构， 会决定选择索引 arch/xxx 目录
-  - *SUBARCH=...*： 选择作为索引的子架构，比如board, 如果ARCH=arm SUBARCH=omap2 会选择 arch/arm/mach-omap2/ arch/arm/plat-omap/ 索引
-  - *COMPILED_SOURCE=1*： 只索引编译的文件 如果希望索引没有编译的文件 请忽略  
-  - *cscope&tags*: rule to make cscope/ctags index 
-
-手动创建索引文件
-^^^^^^^^^^^^^^^^
-有些时候，也许 *tags.sh* 工作无法达到你的预期，这个时候 可以通过手动索引，下面的步骤参考来自: https://cscope.sourceforge.net/large_projects.html
-
-首先，需要创建一个 *cscope.files* 文件列出你想要索引的文件
-
-比如可以通过以下命令，列出索引文件 以及只列出 arch/arm 以及 OMAP platform 的文件 
-
-.. code-block:: console
-    :linenos:
-
-    $find    $dir                                          \
-        -path "$dir/arch*"               -prune -o    \
-        -path "$dir/tmp*"                -prune -o    \
-        -path "$dir/Documentation*"      -prune -o    \
-        -path "$dir/scripts*"            -prune -o    \
-        -path "$dir/tools*"              -prune -o    \
-        -path "$dir/include/config*"     -prune -o    \
-        -path "$dir/usr/include*"        -prune -o    \
-        -type f                                       \
-        -not -name '*.mod.c'                          \
-        -name "*.[chsS]" -print > cscope.files
-    $find    $dir/arch/arm                                 \
-        -path "$dir/arch/arm/mach-*"     -prune -o    \
-        -path "$dir/arch/arm/plat-*"     -prune -o    \
-        -path "$dir/arch/arm/configs"    -prune -o    \
-        -path "$dir/arch/arm/kvm"        -prune -o    \
-        -path "$dir/arch/arm/xen"        -prune -o    \
-        -type f                                       \
-        -not -name '*.mod.c'                          \
-        -name "*.[chsS]" -print >> cscope.files
-    $find    $dir/arch/arm/mach-omap2/                     \
-        $dir/arch/arm/plat-omap/                      \
-        -type f                                       \
-        -not -name '*.mod.c'                          \
-        -name "*.[chsS]" -print >> cscope.files
-
-以下是一个X86架构的示例 
-
-.. code-block:: console
-    :linenos:
-
-    $find    $dir                                          \
-        -path "$dir/arch*"               -prune -o    \
-        -path "$dir/tmp*"                -prune -o    \
-        -path "$dir/Documentation*"      -prune -o    \
-        -path "$dir/scripts*"            -prune -o    \
-        -path "$dir/tools*"              -prune -o    \
-        -path "$dir/include/config*"     -prune -o    \
-        -path "$dir/usr/include*"        -prune -o    \
-        -type f                                       \
-        -not -name '*.mod.c'                          \
-        -name "*.[chsS]" -print > cscope.files
-    $find    $dir/arch/x86                                 \
-        -path "$dir/arch/x86/configs"    -prune -o    \
-        -path "$dir/arch/x86/kvm"        -prune -o    \
-        -path "$dir/arch/x86/lguest"     -prune -o    \
-        -path "$dir/arch/x86/xen"        -prune -o    \
-        -type f                                       \
-        -not -name '*.mod.c'                          \
-        -name "*.[chsS]" -print >> cscope.files
-
-和脚本类似，如果你只在kernel下开发，替换 *dir=.*, 如果你在其他目录开发，替换为绝对路径 
-
-接下来根据cscope.files 生成索引 
-
-.. code-block:: console
-    :linenos:
-	
-	$ cscope -b -q -k
-
-接下来根据cscope.files 生成ctag索引数据库
-
-.. code-block:: console
-    :linenos:
-	
-	$ ctags -L cscope.files
-
-现在应该拥有以下文件: 
-
-- cscope.in.out
-- cscope.out
-- cscope.po.out
-- tags
-
-VIM配置
---------
-
-基本配置
-^^^^^^^^^^
-首先配置80个字符长度限制 因为内核编码要求每行不应该超过80个字符
-修改~/.vimrc 增加： 
-
-.. code-block:: console
-    :linenos:
-	
-	" 80 characters line
-	set colorcolumn=81
-	"execute "set colorcolumn=" . join(range(81,335), ',')
-	highlight ColorColumn ctermbg=Black ctermfg=DarkRed
-
-内核编码风格要求 行尾不应该有空白字符 请添加: 
-
-.. code-block:: console
-    :linenos:
-	
-	" Highlight trailing spaces
-	" http://vim.wikia.com/wiki/Highlight_unwanted_spaces
-	highlight ExtraWhitespace ctermbg=red guibg=red
-	match ExtraWhitespace /\s\+$/
-	autocmd BufWinEnter * match ExtraWhitespace /\s\+$/
-	autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
-	autocmd InsertLeave * match ExtraWhitespace /\s\+$/
-	autocmd BufWinLeave * call clearmatches()
-
-配置完成之后，下面是一个显示测试
-
-.. image:: ./images/1.png
- :width: 400px
- 
-vim插件管理
-^^^^^^^^^^^^^
-推荐使用pathogen作为插件管理: https://github.com/tpope/vim-pathogen  安装参考: 
-
-.. code-block:: console
-    :linenos:
-
-	$ mkdir -p ~/.vim/autoload ~/.vim/bundle && \
-	$ curl -LSso ~/.vim/autoload/pathogen.vim https://tpo.pe/pathogen.vim
-	
-修改~/.vimrc 增加： 
-
-.. code-block:: console
-    :linenos:
-	
-	execute pathogen#infect()
-	syntax on
-	filetype plugin indent on
-	
-安装kernelsty插件
-^^^^^^^^^^^^^^^^^^
-后面章节会介绍linux 编码风格，在这里我们先安装遵循内核编码风格的vim 插件
-
-.. code-block:: console
-    :linenos:
-	
-	$cd ~/.vim/bundle &&  git clone git@github.com:vivien/vim-linux-coding-style.git
-	
-如果只希望对某些目录下代码应用kernel 风格，请在vimrc 中增加: 
-
-.. code-block:: console
-    :linenos:
-	
-	let g:linuxsty_patterns = [ "/usr/src/", "/linux" ]
-	
-安装NERDTree插件
-^^^^^^^^^^^^^^^^^
-NERDTree时VIM的文件系统浏览器 使用该插件，用户可以直观地浏览复杂的目录层次结构，快速打开文件进行读取或编辑，并执行基本的文件系统操作。
-
-.. code-block:: console
-    :linenos:
-	
-	$ git clone https://github.com/preservim/nerdtree.git ~/.vim/bundle/nerdtree
-
-配置vimrc：
-
- - 配置自动开启和自动退出
- - 配置F3 启动和隐藏目录树
- 
-.. code-block:: console
-    :linenos:
-	
-	" Exit Vim if NERDTree is the only window remaining in the only tab.
-	autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
-	" Start NERDTree and put the cursor back in the other window.
-	autocmd VimEnter * NERDTree | wincmd p
-	nnoremap <F3> :NERDTreeMirror<CR>
-	nnoremap <F3> :NERDTreeMirror<CR>
-
-
-
-基本操作：以下命令都是在NEERDTREE页面操作
-
-+----------+---------------------------------------+
-| 命令 | 说明 |
-+==========+========================================+
-|  ?   |  打开或者隐藏帮助面板   |
-+----------+---------------------------------------+
-| 上下左右 | 选择文件或者目录    |
-+-----+---------------------------------------+
-|  回车 |  展开目录/打开文件(退出上个文件)  |
-+----------+---------------------------------------+
-|  ctrl+w  |  两次 在目录树和文件之前切换   |
-+----------+---------------------------------------+
-|  t  |  以标签形式打开一个文件  |
-+----------+---------------------------------------+
-|  gt  | 标签之前切换  |
-+----------+---------------------------------------+
-|  i/s  | 分割窗口打开 |
-+----------+---------------------------------------+
-
-安装tagbar插件
-^^^^^^^^^^^^^^^^^
-Tagbar 是一个 Vim 插件，它提供了一种简单的方法来浏览当前文件的标签并概述其结构。它通过创建一个侧边栏来显示当前文件的 ctags 生成的标签（按其范围排序）来实现此目的。这意味着，例如 C++ 中的方法显示在定义它们的类下。
-
-
-.. code-block:: console
-    :linenos:
-	
-	$ git clone git@github.com:preservim/tagbar.git ~/.vim/bundle/tagbar
-
-配置vimrc：
-
- - 配置F8 启动和隐藏tagbar
- 
-.. code-block:: console
-    :linenos:
-	
-	nmap <F8> :TagbarToggle<CR>
-
-安装vim airline插件
-^^^^^^^^^^^^^^^^^
-
-.. code-block:: console
-    :linenos:
-	
-	$ git clone git@github.com:vim-airline/vim-airline ~/.vim/bundle/vim-airline
-
-补全插件：YCM
-^^^^^^^^^^^^^^^^^^^^^
-YCM 需要更高版本vim和python 支持 从源码升级： 
-
-.. code-block:: console
-    :linenos:
-	
-	$ git clone https://github.com/vim/vim.git
-	$ cd vim/src
-	$ ./configure --with-features=huge --enable-python3interp
-	$ make
-	$ sudo make install
-
-:安装插件:
-
-.. code-block:: console
-    :linenos:
-	
-	$ git clone git@github.com:ycm-core/YouCompleteMe.git ~/.vim/bundle/YouCompleteMe
-	$ cd  ~/.vim/bundle/YouCompleteMe 
-    $ ./install.py --clangd-completer --verbose
-
-:生成补全:
-
-.. code-block:: console
-    :linenos:
-	
-	$ git clone https://github.com/rdnetto/YCM-Generator.git
-	$ cd YCM-Generator
-	$ ./config_gen.py kernel_dir
-
-
-配置vimrc:关闭自动加载提示
-
-.. code-block:: console
-    :linenos:
-	
-	let g:ycm_confirm_extra_conf = 1
-
-
-VIM风格
-^^^^^^^^^^^^
-配置vimrc：
-
-.. code-block:: console
-    :linenos:
-	
-	$ set t_Co=256
-
-支持hybrid 风格: https://github.com/w0ng/vim-hybrid
-
-
-到目前，kernel开发环境我们算是准备完成了
 
 
 Linux开发指南
@@ -649,7 +291,7 @@ OK，我们已经指导补丁是通过层层挑选 然后最终进入主线的
 
 为了解决上面两个问题，现在主要通过next tree分支，该分支可以理解是下一个内核版本的快照,所有即将或者准备合入主线的补丁，都会先进入这个分支
 
-..note::
+.. note::
 
 	下载地址: https://www.kernel.org/pub/linux/kernel/next/
  
@@ -657,18 +299,6 @@ OK，我们已经指导补丁是通过层层挑选 然后最终进入主线的
 内核入门
 ^^^^^^^^^^^
 如果是一个新手，刚进入社区，往往不知道如何下手，我给一个建议，请永远使用最新的next分支，并尝试把他在你的环境上运行起来，由于这个分支特性和代码往往都是新的，可能会有一些问题，尝试去解决这些问题
-
-
-邮件列表
-^^^^^^^^
-大量的 Linux 内核开发工作是通过邮件列表完成的。如果不加入至少一个列表，就很难成为社区的一名功能齐全的成员。但 Linux 邮件列表也对开发人员构成了潜在危险，他们面临着被大量电子邮件淹没、违反 Linux 列表上使用的约定或两者兼而有之的风险。
-
-..note::
-
-	  大多数内核邮件列表都在 vger.kernel.org 上运行；主列表可在以下位置找到： http://vger.kernel.org/vger-lists.html
-	  不过，其他地方也有一些列表；其中一些位于 redhat.com/mailman/listinfo
-
-关于邮件使用我们将在后续提交补丁在详细说明
 
 
 
@@ -681,7 +311,7 @@ OK，我们已经指导补丁是通过层层挑选 然后最终进入主线的
 ^^^^^^^^
 强烈建议遵循内核编码风格，实际上还有很多工具可以帮助我们完成格式化工作，但是请习惯他
 
-..note::
+.. note::
 
 	参考: https://docs.kernel.org/process/coding-style.html#codingstyle
 
@@ -708,7 +338,7 @@ clang-format使用
 	
 	$ sudo dnf install -y clang-tools-extra
 
-..note::
+.. note::
 
 	 clang-format 详细使用说明 参考: 
 	  - https://clang.llvm.org/docs/ClangFormat.html 
@@ -778,22 +408,10 @@ DEBUG_OBJECTS 可以用来检查 内核创建的各种对象的生命周期，�
 更多信息参考 :ref:`debugobjects`
 
 
-
 内核提供了几个打开调试功能的配置选项；其中大部分可以在“kernel hacking”子菜单中找到。对于用于开发或测试目的的任何内核，应打开其中几个选项。特别是：
  
  -  获取大于给定数量的堆栈帧的警告。生成的输出可能很详细，但不必担心来自内核其他部分的警告 
  -  将添加代码来跟踪内核创建的各种对象的生命周期，并在事情发生混乱时发出警告。如果您要添加一个创建（并导出）自己的复杂对象的子系统，请考虑添加对对象调试基础结构的支持。
- -
-
-
-
-
-
-
-
-
-
-
 
 
 
