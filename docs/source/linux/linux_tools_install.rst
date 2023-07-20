@@ -3,11 +3,9 @@
 Linux各类环境安装指导
 =====================
 
-Linux运行环境
+内核运行环境
 ==============
 
-运行内核环境
--------------
 .. note::
 	建议，自己可以准备一个开发板或者是虚拟机这种实际可以把内核跑起来的环境，我们的实验环节，可能会涉及到对代码的修改验证
 	- ARM64:我使用的是一个树莓派4B的开发板+ openeuler的操作系统 用于测试ARM
@@ -17,7 +15,7 @@ Linux运行环境
 
 
 安装内核开发必要工具
-^^^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 .. code-block:: console
     :linenos:
@@ -27,7 +25,7 @@ Linux运行环境
 	
 	
 树莓派编译环境准备
-^^^^^^^^^^^^^^^^^^^
+--------------------
 我的环境参考openeuler社区版本 22.03 SP1  基于内核版本 5.10
 
  - 操作系统安装: https://docs.openeuler.org/zh/docs/22.03_LTS_SP1/docs/Installation/%E5%AE%89%E8%A3%85%E5%87%86%E5%A4%87-1.html
@@ -35,7 +33,7 @@ Linux运行环境
  - 内核交叉编译指南： https://gitee.com/openeuler/raspberrypi/blob/master/documents/%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E5%86%85%E6%A0%B8.md
 
 发行版开发环境准备
-^^^^^^^^^^^^^^^^^^^^^^
+--------------------
  使用虚拟机的好处在于：不需要考虑交叉编译，内核可以直接安装在虚拟机， 开发环境可以直接作为测试验证环境
 
   - 操作系统安装: https://ken.io/note/openeuler-virtualmachine-install-by-vmware 
@@ -47,7 +45,7 @@ Linux运行环境
 	- 本地基于make安装: https://openanolis.cn/sig/Cloud-Kernel/doc/607587039726485317?preview=
 
 QEMU开发环境准备
-^^^^^^^^^^^^^^^^^^
+--------------------
 
 :QEMU环境准备:
 我是在虚拟机嵌套虚拟机，需要开启vmware 支持VT，在虚拟机设置->处理器->虚拟化引擎
