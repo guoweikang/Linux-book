@@ -124,7 +124,7 @@ virsh shutdown定义位于./tools/virsh-domain.c
 可以看到 virsh shutdown 支持4个模式，我们当前是没有传入mode，也尝试了指定mode，发现只有acpi可以执行下去
 
 .. code-block:: c
-	:emphasize-lines: 28,30
+	:emphasize-lines: 28, 30
 	:linenos:
 
 	while (tmp && *tmp) {                                                        
@@ -165,7 +165,6 @@ virsh shutdown定义位于./tools/virsh-domain.c
 我们继续跟踪不带flags 的 virDomainShutdown，发现这样一段注释:
 
 .. code-block:: console
-	:linenos:
 
 	#Shutdown a domain, the domain object is still usable thereafter, but the domain OS is being stopped. Note that the guest OS may ignore the  request. Additionally, the hypervisor may check and support the domain  'on_poweroff' XML setting resulting in a domain that reboots instead of   shutting down. For guests that react to a shutdown request, the differences    from virDomainDestroy() are that the guests disk storage will be in a stable state rather than having the (virtual) power cord pulled, and  this command returns as soon as the shutdown request is issued rather  than blocking until the guest is no longer running.      
     If the domain is transient and has any snapshot metadata (see virDomainSnapshotNum()), then that metadata will automatically be deleted when the domain quits.  
