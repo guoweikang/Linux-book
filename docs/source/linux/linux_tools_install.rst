@@ -3,6 +3,8 @@
 Linux各类环境安装指导
 =====================
 
+.. _内核运行环境:
+
 内核运行环境
 ==============
 
@@ -43,6 +45,8 @@ Linux各类环境安装指导
 	- 通过rpm下载安装: 好处是内核版本和本机发行版一致，可以直接编译安装，缺点是没有git 信息，参考：https://forum.openeuler.org/t/topic/615
 	- 通过开发社区开发: https://ost.51cto.com/posts/15844 
 	- 本地基于make安装: https://openanolis.cn/sig/Cloud-Kernel/doc/607587039726485317?preview=
+
+.. _QEMU开发环境准备:
 
 QEMU开发环境准备
 --------------------
@@ -89,7 +93,8 @@ QEMU开发环境准备
 .. code-block:: console
     :linenos:
 	
-    $ make -j8 
+    $ make -j8
+	
 	
 :制作根目录:
 	
