@@ -83,10 +83,11 @@ virsh 是libvirt 管理虚拟机的shell client工具，实际上严格意义来
 vshControl 是通信交互模块的通道核心，负责前后台建联， cmdGroups则定义了相关命令行的实现
 
 .. image:: ./images/kvm/2.png
- :width: 400px
+ :width: 800px
 
 
-
+libvirtd
+-----------
 
 常用工具
 =========
@@ -126,7 +127,7 @@ virsh shutdown定义位于./tools/virsh-domain.c
 .. code-block:: c
 	:emphasize-lines: 28, 30
 	:linenos:
-
+	
 	while (tmp && *tmp) {                                                        
         mode = *tmp;                                                             
         if (STREQ(mode, "acpi")) {                                               
@@ -210,7 +211,7 @@ virsh shutdown定义位于./tools/virsh-domain.c
 		return -1;                                                                   
 	}
 
-从上面代码可以看到，真正执行关机的是 16行 con->driver->domainShutdown
+从上面代码可以看到，真正执行关机的是 16行 conn->driver->domainShutdown
 
 
 
