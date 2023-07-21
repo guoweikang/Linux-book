@@ -127,7 +127,6 @@ virsh shutdown定义位于./tools/virsh-domain.c
 	:emphasize-lines: 28,30
 	:linenos:
 
-
 	while (tmp && *tmp) {                                                        
         mode = *tmp;                                                             
         if (STREQ(mode, "acpi")) {                                               
