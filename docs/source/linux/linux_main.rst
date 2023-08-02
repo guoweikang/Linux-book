@@ -189,6 +189,405 @@ PREEMPT_RT的引入对于在编写使用锁的代码提出了新的挑战,我们
 
 
 
+sysfs&kobj
+============
+
+引用计数
+---------
+首先必须要先解释一下引用计数：refcnt， 这是编程模型常用的一个概念，引用计数主要使用在这个场景之下: 
+
+A模块管理着一个内部对象(object), 该对象的申请肯定是A模块去管理的，更加具体一点，比如创建一个线程，
+同时会创建出一个 线程对象(thread_object), 那么 线程退出销毁 通常我们会认为 该线程对象应该被释放；
+但是往往线程退出的时候，线程不一定能够被释放，比如当线程退出的时候，用户正在更新线程的name，也就是说线程
+退出的时候，可能同步并发还有其他人在使用，很多人到这个时候，就会说，同步应该用锁啊。我们在思考一下，
+这个场景并不是说我有竞争，只是说我还在使用这个资源，其他人不能释放，否则会访问非法，用锁的代价是不是太大了一些？
+
+总结一下，引用计数是用来表示 资源(对象) 是否有人在使用，保证资源不会被在有人使用的情况下被释放，保证资源是*可访问的*(不等于是有效的)， 资源释放的动作需要当引用计数减为0之后，才能释放
+
+引用计数的使用一般需要配合一个外部锁来使用(资源释放的时候，需要保证不能够在申请到)
+
+.. image:: ./images/found/4.png
+ :width: 800px
+
+上图是引用计数的常规使用方法: 
+ 
+  - 当资源申请，引用计数第一次初始化为1
+  - 如果有人使用该资源(资源指针的有效由模块内部保证), 对引用计数加1
+  - 不使用该资源的时候，通过减少引用计数，如果引用计数为0触发释放动作
+
+这里仍然需要强调一下：引用计数不对资源的有效性负责，必须由外部模块通过其他机制保证
+
+
+kref
+^^^^^
+kref 是 linux kernel的引用计数的封装结构，实际上非常简单， 
+
+.. code-block:: c
+    :linenos:
+
+    struct kref {
+		refcount_t refcount;
+	};
+
+仅仅是一个原子变量的封装 kref 提供的API有
+
+.. code-block:: c
+    :linenos:
+
+    kref_get(struct kref *kref);
+	kref_put(struct kref *kref, void (*release)(struct kref *kref))
+	kref_put_mutex(struct kref *kref,void (*release)(struct kref *kref),struct mutex *lock）
+	kref_put_lock(struct kref *kref,void (*release)(struct kref *kref),spinlock_t *lock))
+	
+ - kref_get API很简单，只是对引用计数+1；
+ - kref_put API很简单，只是对引用计数-1,同时判断引用计数 决定是否释放资源
+ - kref_put_mutex/lock 和上面一样，只是释放资源的之前会先持锁
+
+kobject
+----------
+让我们回到本节主题sysfs,sysfs 是内核提供的一个内存文件系统, 每个文件节点都在内核以一个内存中的结构体存在;
+这个结构体就是 kobject 
+
+struct kobject 
+^^^^^^^^^^^^^^^^
+sysfs的节点都以kobject的形式存在，让我们继续深入探讨实现机制之前，先简单看一下kobject的定义
+
+.. code-block:: c
+    :linenos:
+
+	struct kobject {
+		const char		   *name; #文件名
+		struct list_head	entry;
+		struct kobject		*parent; #上级目录
+		struct kset		*kset; #暂时先不关注
+		struct kobj_type	*ktype; #重点关注一下
+		struct kernfs_node	*sd; /* sysfs directory entry */
+		struct kref		kref;  # kobject 引用计数
+	#ifdef CONFIG_DEBUG_KOBJECT_RELEASE
+		struct delayed_work	release;
+	#endif
+		unsigned int state_initialized:1;   # 初始化状态标记位
+		unsigned int state_in_sysfs:1;      # 状态标记位
+		unsigned int state_add_uevent_sent:1; # 状态标记位
+		unsigned int state_remove_uevent_sent:1; # 状态标记位
+		unsigned int uevent_suppress:1; # 状态标记位
+	};
+	
+在一切开始之前，我们需要先关注一下 kobj_type，还记得我们在引用计数讲的，当引用计数减为0的时候，才能够释放资源？kobject 的引用计数是kref，他的释放函数呢？
+这里有一个背景知识先需要了解一下，因为一般情况下，几乎不会单独使用的kobject，毕竟他是没有什么实际含义的，他是一个高层的抽象，我们真正使用 往往需要配合内核子系统使用，比如 fs 内存等
+所以 kobject 一般都是伴随着其他子系统一起使用，因此他的释放 是通过初始化方式实现的 
+
+.. code-block:: c
+    :linenos:
+	
+	void kobject_init(struct kobject *kobj, struct kobj_type *ktype)
+
+kobject_init 会明确要求需要传入一个kobj_type对象，这个结构如下
+
+.. code-block:: c
+    :linenos:
+	
+	struct kobj_type {
+	void (*release)(struct kobject *kobj);
+	const struct sysfs_ops *sysfs_ops;
+	struct attribute **default_attrs;	/* use default_groups instead */
+	const struct attribute_group **default_groups;
+	const struct kobj_ns_type_operations *(*child_ns_type)(struct kobject *kobj);
+	const void *(*namespace)(struct kobject *kobj);
+	void (*get_ownership)(struct kobject *kobj, kuid_t *uid, kgid_t *gid);
+};
+
+我们这里先只关注 release，该函数就是当 引用计数减为0的 资源释放回调
+
+
+目录
+^^^^^^^^^
+.. code-block:: c
+    :linenos:
+	
+	void kobject_init(struct kobject *kobj, struct kobj_type *ktype)；
+	struct kobject *kobject_create(void)；
+	int kobject_add(struct kobject *kobj, struct kobject *parent,const char *fmt, ...);
+	struct kobject *kobject_create_and_add(const char *name, struct kobject *parent);
+	void kobject_put(struct kobject *kobj)；
+
+简单说明一下：
+  - kobject_init：初始化kobject 的基本字段和状态，设置 state_initialized标志位， 初始化ktype以及kref引用计数
+  - kobject_create：kobject_init的封装版本，会通过kzalloc动态申请内存，并且使用默认的 kobj_type 初始化kobject
+  - kobject_add: 把kobject 加入到sysfs
+  - kobject_create_and_add： 上面两个函数的封装
+  - kobject_put: kobject 减少引用计数，如果引用计数减为0，会清理kobject 
+
+注意区分 init 、create、add 的区别，只有通过kobject_add 才可以加入到sysfs，否则知识对kobject的初始化，完成下面这个实验以后，我们会简单在剖析一下
+内部实现
+
+下面代码可以简单的创建一个 /sys/test目录
+
+.. code-block:: c
+    :linenos:
+	
+	#include <linux/init.h>   /* for __init and __exit */
+	#include <linux/module.h> /* for module_init and module_exit */
+	#include <linux/printk.h> /* for printk call */
+	#include <linux/kobject.h> /* for printk call */
+	#include <linux/sysfs.h> /* for printk call */
+	
+	MODULE_AUTHOR("Syntastic");
+	MODULE_LICENSE("GPL");
+	MODULE_DESCRIPTION("Test module");
+	
+	struct kobject *test_kobj;
+	
+	static int __init my_init(void)
+	{
+		test_kobj = kobject_create_and_add("test", NULL);
+		if (!test_kobj)
+			printk(KERN_ERR "create koject failed!\n");  
+	
+			printk(KERN_DEBUG "It works!\n");    /* missing semicolon */
+			return 0;
+	}
+	
+	static void __exit my_exit(void)
+	{
+		if (test_kobj) {
+			kobject_put(test_kobj);
+		}
+		printk(KERN_DEBUG "Goodbye!\n");
+	}
+	
+	module_init(my_init);
+	module_exit(my_exit);
+
+通过上面代码 我们可以看到sys在根目录下生成了 test 目录 下面是创建目录的核心代码逻辑
+
+.. code-block:: c
+    :linenos:
+
+    - kobject_create_and_add
+	 - kobject_create
+	  - kzalloc(动态分配kobject)
+	  - kobject_init(kobj, &dynamic_kobj_ktype) //利用dynamic_kobj_ktype 作为ktype初始化，release就是kfree释放内存
+		- kobject_init_internal： //初始化引用计数 初始化状态标志位 初始化 entry
+		- kobj->ktype = ktype; // 初始化keype 
+	 - kobject_add
+      - kobject_add_varg
+	   - kobj->parent = parent;//设置父目录
+       - kobject_add_internal	  
+	    - 判断kobj是否有parent，如果没有使用kobj ->kset 作为parent 
+		- kobj 加入kset 
+		- create_dir(创建目录 和 目录下的文件)
+        - state_in_sysfs =1 // 初始化状态标志位
+		
+下面是目录删除的核心逻辑
+
+.. code-block:: c
+    :linenos:
+	
+	 - kobject-put
+	   - kref_put
+	    - kobject_release
+		 - kobject_cleanup
+		  - state_in_sysfs 
+		    - __kobject_del
+			 - sysfs_remove_groups
+			 - sysfs_remove_dir
+			 - sysfs_put
+			 - kobj->state_in_sysfs = 0
+			 - kobj_kset_leave(kobj); // kobject 离开kset
+			 - kobj->parent = NULL;
+
+
+文件
+^^^^^
+如何在目录下生成文件呢？ sysfs 定义下面结构： 
+
+.. code-block:: c
+    :linenos:
+	
+	struct attribute {
+		const char		*name; //指定文件名称
+		umode_t			mode;  // 文件的访问权限
+	};
+	
+	struct attribute_group {
+		const char		*name; //子目录名称
+		umode_t			(*is_visible)(struct kobject *,
+							struct attribute *, int);  // 自定义函数，根据特定条件设置整个组的可见性
+		umode_t			(*is_bin_visible)(struct kobject *,
+							struct bin_attribute *, int); 
+		struct attribute	**attrs; // 子目录下的文件
+		struct bin_attribute	**bin_attrs;
+	};
+	
+	struct sysfs_ops {
+		ssize_t	(*show)(struct kobject *, struct attribute *, char *);
+		ssize_t	(*store)(struct kobject *, struct attribute *, const char *, size_t);
+	};
+	
+	int sysfs_create_file(struct kobject *kobj, struct attribute *attr); //创建文件
+    int sysfs_remove_file(struct kobject *kobj, struct attribute *attr); //移除文件
+	int sysfs_create_group(struct kobject *kobj, const struct attribute_group *grp)； // 创建group
+	
+
+这两个属性分别以 单个文件/组文件的形式定义了 sysfs下的文件，以及文件读写操作函数的定义
+
+在让我们回顾一下 ktype
+
+.. code-block:: c
+    :linenos:
+	
+	struct kobj_type {
+		void (*release)(struct kobject *kobj);  // 定义kobject 释放函数
+		const struct sysfs_ops *sysfs_ops;  // 指向 write read 操作函数
+		struct attribute **default_attrs;	// 在kobject目录创建  默认包含的文件
+		const struct attribute_group **default_groups; // 在kobject目录创建  默认包含的组文件
+		const struct kobj_ns_type_operations *(*child_ns_type)(struct kobject *kobj);
+		const void *(*namespace)(struct kobject *kobj);
+		void (*get_ownership)(struct kobject *kobj, kuid_t *uid, kgid_t *gid);
+	};
+
+那么 sysfs_ops 是在哪里初始化的？ 回到kobject_create_and_add 的逻辑里面， kobject 默认使用 dynamic_kobj_ktype 初始化ktype 默认的ktype 的ops定义如下
+
+.. code-block:: c
+    :linenos:
+	
+	const struct sysfs_ops kobj_sysfs_ops = {
+		.show   = kobj_attr_show,  // ktype 默认的show 和 store 使用统一的接口 
+		.store  = kobj_attr_store,
+	}
+	
+	/* default kobject attribute operations */
+	static ssize_t kobj_attr_show(struct kobject *kobj, struct attribute *attr,
+					char *buf)
+	{
+		struct kobj_attribute *kattr;
+		ssize_t ret = -EIO;
+	
+		kattr = container_of(attr, struct kobj_attribute, attr); // 通过不同的attr 在得到各自的 show 和 store 实现针对不同文件的ops的定义
+		if (kattr->show)
+			ret = kattr->show(kobj, kattr, buf);
+		return ret;
+	}
+	
+	static ssize_t kobj_attr_store(struct kobject *kobj, struct attribute *attr,
+					const char *buf, size_t count)
+	{
+		struct kobj_attribute *kattr;
+		ssize_t ret = -EIO;
+	
+		kattr = container_of(attr, struct kobj_attribute, attr);
+		if (kattr->store)
+			ret = kattr->store(kobj, kattr, buf, count);
+		return ret;
+	}
+
+这里面有一个核心关注点：kobj_attribute 对 attribute 进行了封装，从而实现不同attr 拥有不同的ops
+
+下面代码可以简单的在 /sys/test目录下创建一个hello_world，可以向hello_world 写入字符串，以及回显他刚才写入的字符串
+
+
+.. code-block:: c
+    :linenos:
+	
+	#include <linux/init.h>   /* for __init and __exit */
+	#include <linux/module.h> /* for module_init and module_exit */
+	#include <linux/printk.h> /* for printk call */
+	#include <linux/kobject.h> /* for printk call */
+	#include <linux/sysfs.h> /* for printk call */
+	
+	MODULE_AUTHOR("Syntastic");
+	MODULE_LICENSE("GPL");
+	MODULE_DESCRIPTION("Test module");
+	
+	static struct kobject *test_kobj;
+	static char hello_str[1024];
+
+
+	ssize_t  hello_show (struct kobject *kobj, struct kobj_attribute *attr,char *buf) 
+	{
+		return sprintf(buf, "%s\n", hello_str);
+	}
+	
+	ssize_t  hello_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+	{
+		return snprintf(hello_str, count, "%s\n", buf);
+	}	
+	
+	static struct kobj_attribute hello_attr = __ATTR_RW(hello);
+	
+	
+	static int __init my_init(void)
+	{
+		test_kobj = kobject_create_and_add("test", NULL);
+		if (test_kobj == NULL)
+			printk(KERN_ERR "create koject failed!\n");  
+	
+		sysfs_create_file(test_kobj, &hello_attr.attr);
+	
+			printk(KERN_DEBUG "It works!\n");    /* missing semicolon */
+			return 0;
+	}
+	
+	static void __exit my_exit(void)
+	{
+		if (test_kobj != NULL) {
+			sysfs_remove_file(test_kobj, &hello_attr.attr);
+			kobject_put(test_kobj);
+				printk(KERN_DEBUG "Goodbye!\n");
+		}
+			printk(KERN_DEBUG "Goodbye!\n");
+	}
+	
+	module_init(my_init);
+	module_exit(my_exit);
+
+
+下面是演示效果
+.. image:: ./images/found/5.png
+ :width: 400px
+
+
+kset
+^^^^^
+通过前面几个小节，我们基本上清楚了如何通过 kobject在sysfs创建目录以及文件，以及如何和用户态实现交互
+内核还提供了一个上层抽象 kset，他的主要作用就是允许把多个kobject 以集合的形式 进行归类，他的定义很简单
+
+.. code-block:: c
+    :linenos:
+	
+	struct kset {
+        struct list_head list;  // 集合中的kobject 通过entry 以链表串起来
+        spinlock_t list_lock;  // 保护链表
+        struct kobject kobj;  // kset自身也是一个kobj
+        const struct kset_uevent_ops *uevent_ops; // 事件机制 当kset有kobj 加入和移除 可以触发事件
+	} __randomize_layout;
+
+	int kset_register(struct kset *k);
+	void kset_unregister(struct kset *k);
+    static struct kset *kset_create_and_add(const char *name,const struct kset_uevent_ops *uevent_ops,
+				struct kobject *parent_kobj);
+				
+	
+其实kset大部分接口 还是直接使用了kobject的接口
+
+subsystem
+^^^^^^^^^^
+子系统是对kset的更高级别的抽象
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
 
 
 

@@ -1,6 +1,6 @@
 
 =============
-KVM子系统
+虚拟化
 =============
 
 前言
@@ -11,55 +11,234 @@ KVM子系统
 
 基本术语
 ^^^^^^^^
- - host： 运行虚拟操作系统的宿主机
- - guest/Virtual Machine/Domain/VM ： 一个虚拟操作系统
- - virt-manager: 负责部署和管理虚拟机的图形化工具
- - virt-install: 负责安装虚拟机的命令行工具
+ - Host OS： 运行虚拟操作系统的宿主机
+ - Guest OS/Virtual Machine/Domain/VM ： 一个虚拟操作系统
+ - hypervisor: 虚拟机管理程序，顾名思义，就是负责创建、运行、管理虚拟机的程序，也叫VMM(Virtual Machine Monitor)
 
-
-hypervisor
+全/半虚拟化
 ^^^^^^^^^^^^
-虚拟机管理程序，顾名思义，就是负责创建、运行、管理虚拟机的程序，一般业界会根据hypervisor运行的环境 以及guset os运行环境，分为type1 type2 
+简单介绍一下全/半虚拟化，我们以X86作为举例
 
- - type1: hypervisor运行在裸机上，自己是独立的微型的系统，不需要操作系统承载,这样guest os可以直接运行在主机/裸金属 比如: XEN Hyper-V VMware ESXi
- - type2: hypervisor运行操作系统上，因此 guest os 也需要运行在 主机操作系统上,比如 VMware Workstation，VirtualBox
+是否是全虚拟化还是半虚拟化，表象上取决于Guest OS是否感知宿主机的存在。是否需要修改操作系统代码,是否感知VMM的存在
 
-从定义上，我们可以直观感受到，两种虚拟化的不同
+我们已经知道，所谓的代码最终执行都是一些二进制的指令，当前固有的任何主流CPU架构，基于当今操作系统的设计，cpu都会有多个特权级, 一般用户代码拥有普通权限，操作系统内核代码拥有高级权限，这里的普通和高级区别在于 是否可以使用特权指令,用户代码必须要通过syscall或者某种手段进入内核，才能执行特权指令
+
+.. image:: ./images/kvm/5.png
+ :width: 800px
+
+特殊指令的约束对虚拟化提出了挑战，虚拟化一个核心挑战就是： 
  
- - type1的更"直接",就意味性能会更好
- - type2由于隔离了一层操作系统，势必性能就会更差
- - type1的硬件是有限的，Guest OS一旦确定了硬件资源，那可能就只有这么多，同时也限制了GuestOS数量，如果type1 希望处理这种限制，他势必又要对硬件做抽象管理(但是这不就是操作系统干的事情吗)
- - type2由于是host操作系统虚拟化出来的(可以先简单类比为线程)，就实现了硬件资源可以被多路复用: 比如通过调度CPU 可以同时被OS1,OS2使用(性能打折), 但是如果GOS1和GOS2一个是白天运行业务，一个是晚上运行业务，性能打折会更小
+ - 如何让GuestOS能够正确执行特权指令？
+ - 如何保证GUEST OS执行特权指令，不破坏其他OS？
  
-在云服务厂商中，type2如今被大规模使用
+第一个解决方案，X86上，通过让GUEST OS 运行在 ring1, 利用VMM截获Guest OS特权指令并进行翻译之后，返回结果给GuestOS
+
+.. image:: ./images/kvm/6.png
+ :width: 800px
+
+上述方案显而易见的问题就是性能问题:  当GuestOS 在RING1 执行某个特权指令，会先触发异常(Ring1访问特权指令异常)，然后VMM 捕获异常，处理完，在返回异常
+
+为了处理掉异常上下文切换开销，提出了第二个解决方案: hypercalls
+
+.. image:: ./images/kvm/7.png
+ :width: 800px
+
+hypercalls 存在的目标就是削减掉异常路径，通过修改GuestOS特权指令变为主动调用hypercalls
+虽然性能得到了提升，但是也带了另外一个问题：GuestOS必须配合修改内核代码，显示调用hypercalls
+
+硬件辅助虚拟化
+^^^^^^^^^^^^^^^^
+无论是之前的全虚拟化还是hypercalls半虚拟化，都有突出短板，软件解决不了的问题，那就通过硬件去解决
+虚拟化要完成的目标: 
+
+ - GuestOS 不需要任何修改,不感知VMM
+ - GuestOS 尽可能获得最好的性能
+
+.. image:: ./images/kvm/8.png
+ :width: 800px
+
+现在主流CPU都提供了硬件辅助虚拟化，上图是X86的Intel-V技术，说简单一些，就是把基于软件异常处理动作更改为了硬件自动处理
+
+在X86架构下，Intel提供了VMM-NonRoot 和ROOT(和原先一样)，通过CPU架构主动对虚拟化的支持，大大减小了虚拟化的上下文切换开销
+
+拥有了硬件辅助的虚拟化，现在全虚拟化也几乎拥有了类似半虚拟化的性能
+
+
+再谈hypervisor
+^^^^^^^^^^^^^^
+回顾之前对于全/半/硬件辅助虚拟化，我们可以看到VMM几乎都是处于Ring0或者是ROOT之下，业界对于hypervisor
+有两种分类: type1/type2  参考: https://zh.wikipedia.org/wiki/Hypervisor
+
+.. image:: ./images/kvm/9.png
+ :width: 800px
+
+type1: 这些虚拟机管理程序直接运行在宿主机的硬件上来控制硬件和管理客操作系统
+ 
+ - 硬件支持
+ - VMM就是主操作系统
+ - 效率高 
+ 
+type2: 这些虚拟机管理程序运行在传统的操作系统上，就像其他计算机程序那样运行。
+
+ - VMM就是普通的应用程序
+ - 效率低
+
+上述两种虚拟化以前一直还是有非常明显的区别的，比如我们在windows下使用的Vmware 又或者是QEMU，都是典型的type2，在一些商用场景，type1则被普遍使用
+
+但是，随着Linux KVM的普及，两者的界限模糊了起来，接下来我们介绍KVM
 
 KVM
 ^^^^^
 Kernel-based Virtual Machine (KVM) is a 是 Linux 内核的虚拟化基础设施，可将其转变为hypervisor(虚拟机管理程序)。 它在2007年2月5日发布的内核版本2.6.20中被合并到Linux内核主线中。
 
-:KVM属于type1还是type2: 
-  直观可能会认为KVM 是type2，毕竟hypervisor以及Guest OS都是运行在 linux 操作系统上的，但是实际上KVM是介于type1和type2之间，
-  KVM属于内核模块，实际运行在内核态,其实可以认为和type1一样，kvm guest 某些能力可以直接基于硬件，但是又因为host 上又在同时运行linux HOST操作系统，主机应用和虚拟机也有资源竞争，所以，这种意义上，内核也属于type2
+:KVM type1&type2:
+ KVM作为内核的一个模块，毋庸置疑是运行在Ring0的，直接在硬件之上运行,可以归于type2,但是又因为linux自身也是一个操作系统，KVM作为hypervisor只是复用了linux的内存调度等，实际上linux 也可以单独作为OS使用，并运行自己的应用软件，所以从这方面讲，KVM又属于type2，KVM的存在，模糊了传统VMM类型的定义
 
-KVM的优点: 
+QEMU
+^^^^^
+简单介绍一下QEMU
 
-- 性能和可扩展性：KVM 提供接近本机的性能，这使其成为可扩展的解决方案。
-- 成本更低：由于开源，没有供应商锁定，维护虚拟化基础设施很容易。
-- 安全：KVM支持selinux等安全特性，使其安全。 注意：不保证任何虚拟机管理程序没有错误
-- 支持实时/离线VM迁移：当计划在KVM主机上进行任何维护时，此功能会有所帮助。
-- 完全虚拟化：KVM 是一种完全虚拟化技术，而不是半虚拟化技术，因此不需要在来宾操作系统中进行任何修改。
-- 开源：KVM 是开源软件，由大型开源开发者社区维护。
-- 各种文件系统支持：KVM支持主流Linux内核支持的所有类型的文件系统。
-- 资源过度使用：允许您分配比主机上可用资源更多的虚拟化 CPU 和内存。然后，虚拟机仅使用它们需要的资源，从而允许其他虚拟机使用未使用的资源
+QEMU（quick emulator）是一款由法布里斯·贝拉（Fabrice Bellard）等人编写的通用且免费的可执行硬件虚拟化的（hardware virtualization）开源仿真器（Emulator）。
+其与Bochs，PearPC类似，但拥有高速（配合KVM），跨平台的特性。
 
-KVM的缺点： 
+QEMU的架构由纯软件实现，并在Guest与Host中间，来处理Guest的硬件请求，并由其转译给真正的硬件。
+然而因为QEMU是纯软件实现的，所有的指令都要经过QEMU，使得性能很差，而配合KVM则可以解决这一问题。
+QEMU虚拟化的思路是：提取Guest代码，翻译为TCG中间代码，而后翻译为Host代码。相当于实现了一个“中间人”的角色
 
- - 受某些处理器类型支持：https://www.linux-kvm.org/page/Processor_support
- - 复杂的网络。
 
-简单实验
-^^^^^^^^^^^^
+libvirt
+^^^^^^^^^
+libvirt是一套用于管理硬件虚拟化的开源API、守护进程与管理工具。此套组可用于管理KVM、Xen、VMware ESXi、QEMU及其他虚拟化技术。libvirt内置的API广泛用于云解决方案开发中的虚拟机监视器编排层（Orchestration Layer）
+
+libvirt&QEMU&KVM的关系
+^^^^^^^^^^^^^^^^^^^^^^
+前面简单介绍了一些基本概念，他们之前又到底是什么关系？
+
+严格意义上来说，KVM\QEMU 都可以被看作为VMM,但是，基于QEMU在仿真的完备程度，对于多种硬件/IO/外设模拟的支持已经相当完善
+KVM的主要优势在于对硬件辅助虚拟化的支持，但是对于其他设备支持又过于复杂，而且也并没有成为主要的性能瓶颈点，所以QEMU兼容了KVM的支持，在CPU和内存虚拟化兼容了KVM的能力，使得基于qemu的虚拟机性能获得了很大提升
+
+libvirt是在公有云虚拟化场景下诞生的一个虚拟机管理工具，由于虚拟化技术和厂商的技术以及平台无法兼容，libvirt通过一层API兼容层，实现了对多种虚拟化技术在管理方面的统一管理
+
+
+.. image:: ./images/kvm/10.png
+ :width: 800px
+
+实验
+^^^^^^^^^
 在 :ref:`基于KVM运行虚拟机` 实验指引下，初尝KVM的魅力
+
+
+libvirt
+=======
+虚拟化章节，重点本来是应该在虚拟化的具体实现上，libvirt作为虚拟化的API层，其实本身并不涉及到核心虚拟化技术的实现，但是在 作为虚拟化问题定位、状态监控上，他发挥了重大作用，我们本章节重点在于介绍livirt工具使用的了解上，可能会涉及到一些代码架构
+
+本章内容大部分节选来自:https://libvirt.org/docs.html
+
+
+基础架构
+---------
+
+.. image:: ./images/kvm/11.png
+ :width: 800px
+
+libvirt源码基本上包含上述三个层级，
+
+ - 一部分属于tools和外部API，对用户提供操作界面
+ - 一部分以daemon的形式存在(支持单模式/模块化daemon)
+ - 虚拟化能力的提供由driver负责提供
+
+通过libvirt抽象层的封装，完成了两个功能
+ - 屏蔽掉底层虚拟化技术实现/接口的不同
+ - 对外提供统一的接口/命令行
+ 
+源码安装&调试
+--------------
+
+构建
+^^^^^
+参考:https://libvirt.org/compiling.html
+
+
+调试
+^^^^^^^^^
+
+工具的日志,需要通过环境变量打开: 
+
+.. code-block:: c
+	:linenos:
+	
+	$export LIBVIRT_DEBUG = {1 debug，2 info，3 warn，4 error}
+	$export LIBVIRT_LOG_FILTERS = 
+	$export LIBVIRT_LOG_OUTPUTS = 
+
+代码的调试
+.. code-block:: c
+	:linenos:
+	
+	$ pwd
+	/home/to/your/checkout/build
+	$./run ./tools/virsh ....
+
+守护进程
+----------
+我们已经知道，libvirt 可以提供两种daemon模型: 
+ - 单体守护进程 (Monolithic Daemon)
+ - 模块化守护进程 (Modular Daemons)
+
+模块化的守护进程未来讲逐步替换掉单体模式，当前默认仍然是单体模式
+
+运行模式
+^^^^^^^^^
+无论是单体或者是模块化守护进程，都支持两种运行模式 
+
+ - 系统模式: 该运行模式下，拥有root权限， 拥有管理员权限，可以使用全部能力
+ - 会话模式: 该运行模式，只有同一个UID下的用户/客户端可以访问，该模式下，守护进程可能不会具备全部功能 
+
+简单点说： libvirtd 拥有root权限，可以使用系统所有资源，适合于服务器场景，session mode 适合个人
+
+通信通道
+^^^^^^^^^
+libvirt守护进程对外提供API或者为工具提供访问能力，主要通过两种方法
+
+ - 本地的UNIX socket
+ - 远端的TCP端口
+
+
+
+:单体守护进程系统模式下的通信通道:
+
+  -  /var/run/libvirt/libvirt-sock : 提供完整的读写权限，libvirt提供API的主要通道
+  - /var/run/libvirt/libvirt-sock-ro: 仅用来监控使用
+  - /var/run/libvirt/libvirt-admin-sock: 用于管理和配置守护进程自身行为
+  - TCP 16509 ： 一个not-tls监听端口 远端访问接口
+  - TCP 16514 : 一个tls监听端口 远端访问接口
+
+:单体守护进程会话模式下的通信通道:
+和系统模式类似，只是目前前缀改为: /var/run/user/$UID
+
+
+工具的使用
+-----------
+引用: https://libvirt.org/manpages/index.html
+
+virt-install
+^^^^^^^^^^^^
+用于配置新的虚拟机
+
+
+
+
+
+Driver框架
+----------
+
+
+QEMU
+=====
+
+
+KVM
+=====
 
 
 技术架构
@@ -125,7 +304,7 @@ virsh shutdown定义位于./tools/virsh-domain.c
 可以看到 virsh shutdown 支持4个模式，我们当前是没有传入mode，也尝试了指定mode，发现只有acpi可以执行下去
 
 .. code-block:: c
-	:emphasize-lines: 28, 30
+	:emphasize-lines: 30
 	:linenos:
 	
 	while (tmp && *tmp) {                                                        

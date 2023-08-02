@@ -2,6 +2,81 @@
 LinuxDFX
 ==========
 
+
+网络
+======
+
+TCP/UDP
+-----------
+ss
+^^^^^^^^^^^^^
+用于dump 当前系统的 网络socket 状态
+
+常用选项有:
+
+ - 不解析IP，以数字显示： -n
+ - 选择指定协议的sockets: -t(tcp) -u(udp) -d (DCCP)  -w(raw) -x(unix sockets = -f unix) -S(SCTP) --vsock( =-f vsock) 
+ - 选择指定协议簇的sockets : -f (unix inet inet6 link netlink vsock xdp)
+ - 显示连接的详细信息: -i 
+ - 显示timer信息: -o , 会输出 <timer_name: on/keepalive/timewait/persist/unknown> <expire_time>  <retrans>
+ - 显示连接内存信息: -m  
+ 
+-i选项输出解析:
+
+ - cubic: 拥塞算法
+ - wscale:<snd_wscale>:<rcv_wscale>: 窗口大小缩放因子
+ - rto: tcp re-transmission timeout  TCP 重传时间 单位 ms（会根据网络状态动态调整）
+ - rtt: 显示为 rtt/rtt_var rtt是平均往返时间，rttvar是rtt的平均偏差，它们的单位是毫秒
+ - ato: 下一次等待ACK的超时时间，如果此段时间没有收到ACK，会触发重传
+ - mss: Maximum Segment Size 协商的最大分段字节大小 一般为 MTU 减去TCP/IP报头大小
+ - pmtu: 当前链路路径上的允许的最小的MTU(数据包不分片的大小)
+ - rcvmss: 接收端最大分段字节大小
+ - advmss: 向外公布的最大分段字节大小
+ - cwnd: Congestion Window 阻塞窗口，管理发送方未受到接收方ACK的情况下可以发送的数据量 
+ - ssthresh: 慢启动阈值 当cwnd 到达这个值以后，从指数增长变为慢速增长
+ - bytes_send: 以发送的字节
+ - bytes_received：接收的字节
+ - bytes_acked：得到ACK的响应的字节
+ - bytes_retrans: ACK无响应后 重发的包
+ - (data)segs_out: 发送的报文段
+ - (data)segs_in: 接受的报文段
+ - lastsnd(rcv/ack)： 最后一次收到/发送/ack的
+ - pacing_rate: 每秒的比特数(bps) 每秒的包数量(pps) 表示发送方以多块的速度在连接上发送数据
+ - delivery_rate：交付率 "是指 TCP 数据包成功交付给接收方的速率。它表示 TCP 发送方发送数据包、接收方接收并确认这些数据包而没有任何丢失或重传的速率。
+ - delivered： 已送达字段，显示自建立 TCP 连接以来已成功送达接收方的 TCP 数据包总数。这包括数据包和接收方为确认收到数据而发回给发送方的确认包（ACK）。
+ - app_limited: app_limited 状态表明发送应用程序是数据传输过程中的瓶颈,这种情况可能发生在应用程序处理数据速度较慢、等待用户输入或执行其他任务时，从而延迟了数据的生成和传输。因此，发送速率可能会低于网络容量或接收器处理接收数据的能力
+ - busy: 处理排队RECV-Q/SEND-Q的时间
+ - retrans: <retrans_out/retrans_total>
+ - dsack_dups: 
+ 
+-m选项输出解析： 
+
+    skmem:(r<rmem_alloc>,rb<rcv_buf>,t<wmem_alloc>,tb<snd_buf>, f<fwd_alloc>,w<wmem_queued>,o<opt_mem>,bl<back_log>,d<sock_drop>)
+	
+	-rmem_alloc： 接受报文使用的内存
+	-rcv_buf： 接受报文可以使用的缓存总大小
+	-wmem_alloc： 发送报文占用的内存
+	-snd_buf： 发送报文可以使用的缓存总大小
+	-fwd_alloc： 内存备份缓冲区，
+	-wmem_queued：  发送报文占用的内存 还没有发送到layer3
+	-sock_drop： 在包被分流到socket之前丢弃的包
+
+
+常用组合: 
+
+ - 查看TCP简单状态: ss -nt
+ - 查看TCP详细状态: ss -nipoe
+
+
+ss
+^^^^^^^^^^^^^
+
+案例
+------
+
+
+
+
 .. _debugobjects:
 
 debugobjects
