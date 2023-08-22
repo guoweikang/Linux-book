@@ -130,6 +130,14 @@ QEMU开发环境准备
    - serial: 指定虚拟机的串行设备 使用pty 
    - console: 在虚拟机和主机之间建立文本控制台
 
+常用构建命令和含义
+--------------------
+
+- make mrproper : 清理配置文件、过程中间件等一切中间产物，只保留干净的源码
+- make clean/distclean ： 一般项目构建不在使用了 使用mrproper 重新构建
+- make dtbs：构建平台DTS
+
+
 
 
 内核阅读/开发代码环境

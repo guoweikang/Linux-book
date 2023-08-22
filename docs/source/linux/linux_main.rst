@@ -189,8 +189,8 @@ PREEMPT_RT的引入对于在编写使用锁的代码提出了新的挑战,我们
 
 
 
-sysfs&kobj
-============
+kobject&sysfs
+==============
 
 引用计数
 ---------
@@ -571,9 +571,76 @@ kset
 	
 其实kset大部分接口 还是直接使用了kobject的接口
 
-subsystem
-^^^^^^^^^^
-子系统是对kset的更高级别的抽象
+内核使用实例
+-------------
+本节，我们以分析xfs 对于kobject &sysfs 的使用，作为收尾
+
+
+.. code-block:: c
+    :linenos:
+	
+	#代码位置: fs/namespace.c：mnt_init
+	#fs_kobj 会作为全局变量声明， fs是/sys/下面的顶级目录之一
+	fs_kobj = kobject_create_and_add("fs", NULL);
+
+上面代码完成了FS子系统在sysfs顶级目录下的创建 并通过 fs_kobj 宣告出去
+
+.. code-block:: c
+    :linenos:
+	
+	#代码位置: xfs/xfs_super.c：init_xfs_fs
+	xfs_kset = kset_create_and_add("xfs", NULL, fs_kobj);
+
+上面代码完成了/sys/fs/xfs目录的创建(以kset方式存在，父节点是fs_kobj)
+
+接下来，我们仅以 xfs 目录下的extra作为举例
+
+.. code-block:: c
+    :linenos:
+	
+	#代码位置: xfs/xfs_super.c：init_xfs_fs
+	xfs_extra_kobj.kobject.kset = xfs_kset; //设置了kobject的kset
+	// 完成 extra kobj的初始化
+	error = xfs_sysfs_init(&xfs_extra_kobj, &xfs_extra_ktype, NULL, "extra"); 
+	// xfs_sysfs_init 就是掉了  kobject_init_and_add 
+	xfs_sysfs_init
+	 - kobject_init_and_add
+
+OK,EXTRA 目录是这样创建的，那么目录下面的文件是在哪里定义和创建的呢？
+如果还记得之前内容，文件是通过attr attr_group创建的，有两种创建方法
+
+ - 通过ktype的defatult_attr 创建 
+ - 通过sysfs_create_file 创建
+ 
+
+.. code-block:: c
+    :linenos:
+	
+	.release = xfs_sysfs_release,
+	.sysfs_ops = &xfs_sysfs_ops,
+	.default_attrs = xfs_extra_attrs,
+
+	STATIC ssize_t
+	atomic_write_show(struct kobject *kobject, char *buf)
+	{
+		return snprintf(buf, PAGE_SIZE, "%d\n", xfs_globals.atomic_write);
+	}
+	XFS_SYSFS_ATTR_RO(atomic_write); // xfs 类似kobj_attribute 封装了attr 实现 ops重定向
+	
+	static struct attribute *xfs_extra_attrs[] = {
+		ATTR_LIST(atomic_write),
+		NULL,
+	};
+	
+	struct kobj_type xfs_extra_ktype = {
+		.release = xfs_sysfs_release,
+		.sysfs_ops = &xfs_sysfs_ops,
+		.default_attrs = xfs_extra_attrs,
+	};
+
+
+
+
 
 
 

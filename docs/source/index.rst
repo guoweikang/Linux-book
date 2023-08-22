@@ -21,10 +21,11 @@ Contents
 .. toctree::
    
    Linux基本介绍 <linux/linux_introduction.rst>
+   内核开发准备 <linux/linux_tools_install.rst>
    内核基础机制 <linux/linux_main.rst>
+   驱动系统 <linux/driver.rst>
    虚拟化 <linux/kvm.rst>
    磁盘&文件系统 <linux/fs.rst>
 
-   内核环境大杂烩 <linux/linux_tools_install.rst>
    Linux DFX <linux/linux_dfx.rst>
 
