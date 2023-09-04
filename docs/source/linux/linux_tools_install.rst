@@ -136,7 +136,9 @@ QEMU开发环境准备
 - make mrproper : 清理配置文件、过程中间件等一切中间产物，只保留干净的源码
 - make clean/distclean ： 一般项目构建不在使用了 使用mrproper 重新构建
 - make dtbs：构建平台DTS
-
+- make xxx_defconfig : 生成.config 
+- make menuconfig : 配置defconfig 
+- make defconfg: 最小化defconfig 可以用来保存为平台defconfig
 
 
 
