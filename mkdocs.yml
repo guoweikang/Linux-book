@@ -1,0 +1,39 @@
+site_name: Rust For Linux
+theme:
+  name: readthedocs
+  highlightjs: true
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        # See: https://mkdocstrings.github.io/python/usage/
+        python:
+          options:
+            docstring_style: sphinx
+markdown_extensions:
+  - markdown_include.include:
+      base_path: .
+  - admonition
+
+
+nav:
+  - 前言: 
+    - '基本介绍': 'index.md'
+    - '内核开发准备': 'linux_tools_install.md'
+  - 基础机制:
+    - '并发同步': 'foundation/lock.md'
+    - 'sysfs': 'foundation/sysfs.md'
+
+  - 内存子系统: 
+    - '简介': 'mem/index.md'
+    - '内存初始化': 'mem/init.md'
+    - '物理内存管理': 'mem/physical.md'
+    - '官网翻译': 'mem/doc.md'
+
+  - 驱动子系统: 
+
+ # - 并发:
+
+
+ # - RUST for Linux:
+
