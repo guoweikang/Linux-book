@@ -1,12 +1,12 @@
 # 物理内存管理
 
-之前 我们已经学习过了，内核启动阶段，通过memblock 以及线性映射，管理起来了系统的物理内存
+我们已经学习过了，内核启动阶段，通过`memblock` 以及`线性映射`，初步接管了系统的物理内存
 
-但是memblock，对于物理内存的管理都是大颗粒的，并且实现比较简单，他的存在主要是为了给后续真正的内存管理提供
-一个内存管理基础
+memblock的管理过于简单他的存在主要是为了给后续真正的内存管理提供内存管理基础
 
+本节我们将深入linux 物理内存管理的第二个世界 
 
-## 物理内存页访问
+## 物理内存页
 
 ### PFN
 物理页帧号，内核根据MMU配置的`页大小`，给每个页编了一个序号，这个页号就叫`页帧编号`
@@ -41,8 +41,6 @@
 物理内存有了`PFN`编号，为了描述每个页，现在还需要一个抽象的结构体，我们把这个抽象的结构体叫`struct page`
 
 对应每个PFN有一个结构体，用以记录该物理内存的: 状态(比如是否被使用、是否被锁、dirty信息等) 
-
-这里只是先简单引入`struct page`的概念 
 
 
 ### 平坦模型
@@ -291,7 +289,9 @@ zone的初始化日志
 
 ## 物理内存分配
 
-### buddy 算法原理
+### buddy子系统
+
+#### 算法原理
 物理内存分配中，永远最令人头痛的就是连续物理内存分配，甚至于Linux内核专门为此研发出了很多特性 
 比如大页内存，以及我们上面看到的为`DMA`服务的 `CMA`机制，还有内存重排；
 
@@ -309,176 +309,13 @@ zone的初始化日志
 
 [图片解释](https://s3.shizhz.me/linux-mm/3.2-wu-li-nei-cun/3.2.4-buddy-system-huo-ban-xi-tong)
 
-
-### 内存碎片压缩
-
-再继续进入内存分配之前，让我们先了解以下内存碎片的背景 
-虽然buddy在某种程度上，可以缓解一些连续内存的分配压力
-
-#### 背景
-[参考](https://lwn.net/Articles/368869/)
-
-简而言之：当系统运行时，页面往往会分散在不同用户之间，
-当需要时很难找到物理上连续的页面组。为了尽可能避免高阶（多页面）内存分配的需要，
-内核已经做了大量工作，因此大多数内核功能都不会受到页面碎片的影响。
-但在某些情况下，仍然需要进行高阶分配；需要进行此类分配的代码可能会在碎片化系统上失效
-
-另外值得注意的是，从某种程度上说，这个问题实际上越来越严重。
-现代处理器已不局限于`4K 页`，它们可以在进程的部分地址空间中使用更大的页（"巨页"）
-，使用超大页面可以带来真正的性能优势，这主要是由于处理器的转换查找缓冲区所承受的压力
-减小了。但是，使用超大页面要求系统能够找到物理上连续的内存区域，
-这些区域不仅要足够大，而且要正确对齐。对于已经运行了一段时间的系统来说，
-寻找这样的空间是一个相当大的挑战。
-
-
-#### 算法原理
-
-
-#### 
-
-
-
-
-
-
-### zonelists
-首先应该知道，在每个`NUMA node` 下面，都有一个 `node_zonelists`,这其实就是一个数组
-```
-/*
- * node_zonelists contains references to all zones in all nodes.
- * Generally the first zones will be references to this node's
- * node_zones.
- */
-struct zonelist node_zonelists[MAX_ZONELISTS];
-```
-
-先说明，为什么需要他，在`NUMA`的情况下，内存节点是有亲和性的，但是总有可能 从亲和的`node` 无法申请出内存，因此
-每个`node`又根据和其他`node`的距离，根据`当前node`，进行了排序，作为备用`fallback`内存，一旦自己的`node`内存
-无法申请出，从**离自己**最近的node分配
-
-当然，嵌入式场景下，一般不用考虑`NUMA`，只有一个`node` 因此不存在`fallback` 这一说 
-
-
-
-
-### zone
-既然在非`NUMA`场景下，只有一个`NODE`,我们也知道 `NODE`下会又不同的`ZONE` ，因此在分配内存时，必须还要确定可以从
-哪些`zone` 里面分配内存
-
-```
-
-#define GFP_ZONE_TABLE ( \
-        (ZONE_NORMAL << 0 * GFP_ZONES_SHIFT)                                   \
-        | (OPT_ZONE_DMA << ___GFP_DMA * GFP_ZONES_SHIFT)                       \
-        | (OPT_ZONE_HIGHMEM << ___GFP_HIGHMEM * GFP_ZONES_SHIFT)               \
-        | (OPT_ZONE_DMA32 << ___GFP_DMA32 * GFP_ZONES_SHIFT)                   \
-        | (ZONE_NORMAL << ___GFP_MOVABLE * GFP_ZONES_SHIFT)                    \
-        | (OPT_ZONE_DMA << (___GFP_MOVABLE | ___GFP_DMA) * GFP_ZONES_SHIFT)    \
-        | (ZONE_MOVABLE << (___GFP_MOVABLE | ___GFP_HIGHMEM) * GFP_ZONES_SHIFT)\
-        | (OPT_ZONE_DMA32 << (___GFP_MOVABLE | ___GFP_DMA32) * GFP_ZONES_SHIFT)\
-)
-```
-`GFP_ZONE_TABLE` 规定了一个table， 规定了不同flags`__GFP_X` 对应的不同的内存区域
-
-```
-#define GFP_ZONEMASK    (__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
-
-static inline enum zone_type gfp_zone(gfp_t flags)
-{
-        enum zone_type z;
-        int bit = (__force int) (flags & GFP_ZONEMASK);
-        z = (GFP_ZONE_TABLE >> (bit * GFP_ZONES_SHIFT)) &
-                                         ((1 << GFP_ZONES_SHIFT) - 1);
-        return z;
-}
-```
-上述代码，首先 `GFP_ZONEMASK` 保证了只处理内存区域的为4种标识  然后对`GFP_ZONE_TABLE` 反向运算，可以得到最终可用的zone
-
-举例说明： 
-
- - 如果用户没有指定zone(0)；则得到 `ZONE_NORMAL`
- - 如果用户指定`___GFP_DMA`；则得到 `OPT_ZONE_DMA`
- - 如果用户指定`___GFP_MOVABLE | ___GFP_DMA32`；则得到 `OPT_ZONE_DMA32`
-
-
-### migrate 
-内核在内存回收中，有一个解决方案叫做，内存迁移，内存迁移通过对物理内存页进行`移动 重排`，形成更加规整的内存
-
-当前内核对内存迁移做了以下分类, 不同的迁移类型会被分为不同的组 以下是当前的分组类型
-```
-enum migratetype {
-         MIGRATE_UNMOVABLE,
-         MIGRATE_MOVABLE,
-         MIGRATE_RECLAIMABLE,
-         MIGRATE_PCPTYPES,       /* the number of types on the pcp lists */
-         MIGRATE_HIGHATOMIC = MIGRATE_PCPTYPES,
- #ifdef CONFIG_CMA
-         /*
-          * MIGRATE_CMA migration type is designed to mimic the way
-          * ZONE_MOVABLE works.  Only movable pages can be allocated
-          * from MIGRATE_CMA pageblocks and page allocator never
-          * implicitly change migration type of MIGRATE_CMA pageblock.
-          *
-          * The way to use it is to change migratetype of a range of
-          * pageblocks to MIGRATE_CMA which can be done by
-          * __free_pageblock_cma() function.
-          */
-         MIGRATE_CMA,
- #endif
- #ifdef CONFIG_MEMORY_ISOLATION
-         MIGRATE_ISOLATE,        /* can't allocate from here */
- #endif
-         MIGRATE_TYPES
- };
-
-```
-
-GFP 和 分组有个对应关系
-
-```
-  #define GFP_MOVABLE_MASK (__GFP_RECLAIMABLE|__GFP_MOVABLE) 
-  #define GFP_MOVABLE_SHIFT 3
-  
-  static inline int gfp_migratetype(const gfp_t gfp_flags)
-  {                       
-          VM_WARN_ON((gfp_flags & GFP_MOVABLE_MASK) == GFP_MOVABLE_MASK);
-          BUILD_BUG_ON((1UL << GFP_MOVABLE_SHIFT) != ___GFP_MOVABLE);
-          BUILD_BUG_ON((___GFP_MOVABLE >> GFP_MOVABLE_SHIFT) != MIGRATE_MOVABLE);
-          BUILD_BUG_ON((___GFP_RECLAIMABLE >> GFP_MOVABLE_SHIFT) != MIGRATE_RECLAIMABLE);
-          BUILD_BUG_ON(((___GFP_MOVABLE | ___GFP_RECLAIMABLE) >>
-                        GFP_MOVABLE_SHIFT) != MIGRATE_HIGHATOMIC);
-          
-          if (unlikely(page_group_by_mobility_disabled))
-                  return MIGRATE_UNMOVABLE;
-          
-          /* Group based on mobility */
-          return (__force unsigned long)(gfp_flags & GFP_MOVABLE_MASK) >> GFP_MOVABLE_SHIFT;
-  }    
-```
-
-从上述代码可以推出
- -  `___GFP_MOVABLE` 对应 `MIGRATE_MOVABLE`
- -  `___GFP_RECLAIMABLE` 对应 `MIGRATE_RECLAIMABLE`
- -  `___GFP_MOVABLE` | `___GFP_RECLAIMABLE` 对应 `MIGRATE_HIGHATOMIC`
-
-
-
-
-
-
-
-
-
-### 核心数据结构
-
+#### 核心结构
 有了之前的概念，我们把内核对于 ZONE 和页表的关系画出来 这个图是基础
 
 ![Screenshot](image/43.png)
 
-我们目前还没有解释 order 的含义，不过我们马上就要解释他
-
-### order
-如上图,必须要知道，内核分配内存单位是以 `order`为单位  `order`的含义代表 2的幂次方 
+#### order
+内核分配内存单位是以 `order`为单位  `order`的含义代表 2的幂次方 
 
  - order0：表示分配1个页
  - order1：表示分配连续2个页
@@ -486,18 +323,12 @@ GFP 和 分组有个对应关系
 
 是否发现一个问题，内核没有办法分配 3个连续内存页？ 为什么？内核之所以选择这样做，是因为内核使用的内存分配算法决定的
 
-该算法我们在后面小节讲,现在先回到我们的主题，通过核心结构，可以看到，内核把每个`ZONE`的内存，根据连续性，分为了不同链表
-
 如果我们分配`order 2` 的内存页，就会从 对应的`free_list[2]` 中优先寻找是否有可以使用内存，当然，如果没有，则会从`order 3`
 的内存中找(拆分为2个`order2`)的链表
 
+#### 代码介绍
 
-### type 
-type我们之前已经介绍过了，标识内存页的迁移标志位，如果有可能，我们分析迁移时在详细介绍
-
-### 链表初始化
-
-这个结构的初始化主要分为两部分，第一部分其实我们已经在之前提到过,
+链表结构的初始化主要分为两部分，第一部分其实我们已经在之前提到过,
 
 ```
 bootmem_init//还记得我们讲 section初始化吗 他也是在这里初始化的
@@ -509,9 +340,6 @@ bootmem_init//还记得我们讲 section初始化吗 他也是在这里初始化
 ```
 
 OK 此时，ZONE里面的可用内存 目前都是空，也就是如果有人申请内存，此时是不可能申请到的，那么是谁初始化的空闲链表?
-
-
-### 链表填充
 
 还记得现在是谁在管理内存吗？ `memblock`,memblock只需要把他管理的内存，除了`reserved`的内存全部释放给buddy就可以了
 
@@ -607,7 +435,8 @@ start_kernel
 		  - __free_pages(page, pageblock_order);
 ```
 
-最终，我们从系统中观察一下是否符合预期: `cat /proc/zoneinfo  |grep cma `
+#### 调试
+从系统中查看zone的信息: `cat /proc/zoneinfo  |grep cma `
 
 ```
 Node 0, zone   DMA32 
@@ -635,6 +464,97 @@ Node 0, zone   Normal
 
 
 
+
+
+### 内存分配接口
+####  __GFP
+
+####  分配准备
+首先应该知道，在每个`NUMA node` 下面，都有一个 `node_zonelists`,这其实就是一个数组
+```
+/*
+ * node_zonelists contains references to all zones in all nodes.
+ * Generally the first zones will be references to this node's
+ * node_zones.
+ */
+struct zonelist node_zonelists[MAX_ZONELISTS];
+```
+
+先说明，为什么需要他，在`NUMA`的情况下，内存节点是有亲和性的，但是总有可能 从亲和的`node` 无法申请出内存，因此
+每个`node`又根据和其他`node`的距离，根据`当前node`，进行了排序，作为备用`fallback`内存，一旦自己的`node`内存
+无法申请出，从**离自己**最近的node分配
+
+当然，嵌入式场景下，一般不用考虑`NUMA`，只有一个`node` 因此不存在`fallback` 这一说 
+
+既然在非`NUMA`场景下，只有一个`NODE`,我们也知道 `NODE`下会又不同的`ZONE` ，因此在分配内存时，必须还要确定可以从
+哪些`zone` 里面分配内存
+
+```
+
+#define GFP_ZONE_TABLE ( \
+        (ZONE_NORMAL << 0 * GFP_ZONES_SHIFT)                                   \
+        | (OPT_ZONE_DMA << ___GFP_DMA * GFP_ZONES_SHIFT)                       \
+        | (OPT_ZONE_HIGHMEM << ___GFP_HIGHMEM * GFP_ZONES_SHIFT)               \
+        | (OPT_ZONE_DMA32 << ___GFP_DMA32 * GFP_ZONES_SHIFT)                   \
+        | (ZONE_NORMAL << ___GFP_MOVABLE * GFP_ZONES_SHIFT)                    \
+        | (OPT_ZONE_DMA << (___GFP_MOVABLE | ___GFP_DMA) * GFP_ZONES_SHIFT)    \
+        | (ZONE_MOVABLE << (___GFP_MOVABLE | ___GFP_HIGHMEM) * GFP_ZONES_SHIFT)\
+        | (OPT_ZONE_DMA32 << (___GFP_MOVABLE | ___GFP_DMA32) * GFP_ZONES_SHIFT)\
+)
+```
+
+`GFP_ZONE_TABLE` 规定了一个table， 规定了不同flags`__GFP_X` 对应的不同的内存区域
+
+```
+#define GFP_ZONEMASK    (__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
+
+static inline enum zone_type gfp_zone(gfp_t flags)
+{
+        enum zone_type z;
+        int bit = (__force int) (flags & GFP_ZONEMASK);
+        z = (GFP_ZONE_TABLE >> (bit * GFP_ZONES_SHIFT)) &
+                                         ((1 << GFP_ZONES_SHIFT) - 1);
+        return z;
+}
+```
+上述代码，首先 `GFP_ZONEMASK` 保证了只处理内存区域的为4种标识  然后对`GFP_ZONE_TABLE` 反向运算，可以得到最终可用的zone
+
+举例说明： 
+
+ - 如果用户没有指定zone(0)；则得到 `ZONE_NORMAL`
+ - 如果用户指定`___GFP_DMA`；则得到 `OPT_ZONE_DMA`
+ - 如果用户指定`___GFP_MOVABLE | ___GFP_DMA32`；则得到 `OPT_ZONE_DMA32`
+
+GFP 和 分组有个对应关系
+
+```
+  #define GFP_MOVABLE_MASK (__GFP_RECLAIMABLE|__GFP_MOVABLE) 
+  #define GFP_MOVABLE_SHIFT 3
+  
+  static inline int gfp_migratetype(const gfp_t gfp_flags)
+  {                       
+          VM_WARN_ON((gfp_flags & GFP_MOVABLE_MASK) == GFP_MOVABLE_MASK);
+          BUILD_BUG_ON((1UL << GFP_MOVABLE_SHIFT) != ___GFP_MOVABLE);
+          BUILD_BUG_ON((___GFP_MOVABLE >> GFP_MOVABLE_SHIFT) != MIGRATE_MOVABLE);
+          BUILD_BUG_ON((___GFP_RECLAIMABLE >> GFP_MOVABLE_SHIFT) != MIGRATE_RECLAIMABLE);
+          BUILD_BUG_ON(((___GFP_MOVABLE | ___GFP_RECLAIMABLE) >>
+                        GFP_MOVABLE_SHIFT) != MIGRATE_HIGHATOMIC);
+          
+          if (unlikely(page_group_by_mobility_disabled))
+                  return MIGRATE_UNMOVABLE;
+          
+          /* Group based on mobility */
+          return (__force unsigned long)(gfp_flags & GFP_MOVABLE_MASK) >> GFP_MOVABLE_SHIFT;
+  }    
+```
+
+从上述代码可以推出
+ -  `___GFP_MOVABLE` 对应 `MIGRATE_MOVABLE`
+ -  `___GFP_RECLAIMABLE` 对应 `MIGRATE_RECLAIMABLE`
+ -  `___GFP_MOVABLE` | `___GFP_RECLAIMABLE` 对应 `MIGRATE_HIGHATOMIC`
+
+
+
 ### PCP(per cpu pageset)
 
 ## DEBUG 
@@ -642,6 +562,23 @@ Node 0, zone   Normal
 ## 性能调优
 
 ### 内存碎片整理
+
+#### compact_memory
+
+主动触发内存规整: `echo “1” > /proc/sys/vm/compact_memory` 会触发全局的内存的主动规整
+
+#### extfrag_threshold
+
+设置查看内存规整因子:` cat > /proc/sys/vm/extfrag_threshold` 值在`0-1000`;越大,表示越不倾向内存规整；
+
+内存规整因子会直接决定内存块是否可以执行规整
+
+#### compaction_proactiveness
+
+设置查看**后台**主动规整的积极程度:`cat > /proc/sys/vm/compaction_proactiveness` 也可以代表碎片化水位线 
+
+值越高，代表最低碎片化水位线越高，碎片化整理越不积极
+
 
 
 

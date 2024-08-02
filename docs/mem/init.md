@@ -383,6 +383,7 @@ fdt的第一次访问: 在完成fdt的内存映射以及校验和检查， 可�
                      pud_val(old_pud) != READ_ONCE(pud_val(*pudp)));   
       }
 ```
+
 因为DTB再VA上 是要求2MB对齐的，所以只映射到了PMD这一级
 
 总结: 

@@ -3,7 +3,6 @@
 
 ## 内核运行环境
 
-
 自己可以准备一个开发板或者是虚拟机这种实际可以把内核跑起来的环境，我们的实验环节，
 可能会涉及到对代码的修改验证
 	
@@ -23,7 +22,7 @@
 
 ### 发行版开发环境准备
 
-使用虚拟机的好处在于：不需要考虑交叉编译，内核可以直接安装在虚拟机， 开发环境可以直接作为测试验证环境
+使用虚拟机的好处在于：不需要考虑交叉编译，内核可以直接安装在虚拟机，开发环境可以直接作为测试验证环境
 
 - 操作系统安装: https://ken.io/note/openeuler-virtualmachine-install-by-vmware 
 
@@ -34,11 +33,295 @@
 - 本地基于make安装: https://openanolis.cn/sig/Cloud-Kernel/doc/607587039726485317?preview=
 
 
+## 社区邮件
+ 
+
+### 邮件列表
+
+大量的 Linux 内核开发工作是通过邮件列表完成的。如果不加入至少一个列表，就很难成为社区的一名功能齐全的成员。
+但 Linux 邮件列表也对开发人员构成了潜在危险，他们面临着被大量电子邮件淹没、违反 Linux 列表上使用的约定或两者兼而有之的风险。
+
+!!! note
+
+  大多数内核邮件列表都在 vger.kernel.org 上运行；主列表可在以下位置找到： http://vger.kernel.org/vger-lists.html
+  不过，其他地方也有一些列表；其中一些位于 redhat.com/mailman/listinfo
+
+### 邮件客户端配置
+
+参考来自: 
+ - https://docs.kernel.org/translations/zh_CN/process/email-clients.html
+ - https://kofno.wordpress.com/2009/08/09/how-fetchmail-and-mutt-saved-me-from-email-mediocrity/
+
+我们使用 MUTT作为邮件客户端需要搭配其他软件一起使用
+
+ - 收件: 使用 fetchmail
+ - 发件: 使用 msmtp
+ - 分类: 使用 maildrop
+ - 邮件编辑: vim
+
+安装工具
+
+```
+	$ sudo dnf install -y mutt fetchmail  libgsasl maildrop -y
+	$ 欧拉没有提供msmtp 包需要手动下载 安装
+	$ sudo rpm -ivh ./msmtp-1.8.10-1.el8.x86_64.rpm 
+```
+
+
+### 配置发件箱
+
+```
+	
+	$ cd ~
+	$ mkdir mail -- 稍后发件箱归档需要
+	$ touch ~/.msmtprc
+	$ touch ~/log/msmtp/msmtp.log
+	$ vim ~/.msmtprc
+	$ sudo chmod 600 .msmtprc --设置配置文件权限
+	$ msmtp -S --debug msmtp测试
+```
+
+~/.msmtprc 参考配置: 
+
+```
+	defaults
+	logfile ~/log/msmtp/msmtp.log
+	account default
+	auth on
+	tls on
+	tls_starttls off
+	host smtp.qq.com
+	port 465
+	from xxxx@qq.com
+	user xxxxx@xxxx.com
+	password xxxxxx
+```
+
+### 配置收件箱
+Fetchmail是一个非常简单的收件程序，而且是前台运行、一次性运行的，意思是：你每次手动执行fetchmail命令，都是在前台一次收取完，程序就自动退出了，不是像一般邮件客户端一直在后台运行。
+
+!!! note
+
+    fetchmail只负责收件，而不负责存储！所以它是要调用另一个程序如procmail来进行存储的。
+    fetchmail的配置文件为~/.fetchmailrc。然后文件权限最少要设置chmod 600 ~/.fetchmailrc
+
+
+配置fetchmailrc收件:
+
+```
+	
+	$ vim ~/.fetchmailrc
+	$ chmod 600 ~/.fetchmailrc
+	$ fetchmail  -v  --- 测试收取命令
+```
+
+
+参考配置: 
+```
+	
+	poll imap.xxxx.com
+        with proto IMAP
+        user "user@zoho.com"
+        there with password "pass"
+        is "localuser" here
+        mda "/usr/bin/maildrop " 
+        options
+        ssl
+```
+
+fetchmail只负责收取，不负责“下载”部分，你找不到邮件存在哪了。, 需要配置MDA分类器，如maildrop，才能看到下载后的邮件。
+
+!!! note
+
+	Fetch其实不是在Mutt`里面`使用的，而是脱离mutt之外的！也就是说，Mutt只负责读取本地存储邮件的文件夹更新，而不会自动帮你去执行fetchmail命令。
+
+设置Mutt快捷键收取邮件的方法是在~/.muttrc中加入macro：
+
+```
+	macro index,pager I '<shell-escape> fetchmail -vk<enter>'
+```
+	
+这样的话，可以在index邮件列表中按I执行外部shell命令收取邮件了。
+
+
+### 配置收件存储分类
+
+maildrop是单纯负责邮件的存储、过滤和分类的，一般配合fetchmail收件使用。
+
+在Pipline中，fetchmail把收到的邮件全部传送到maildrop进行过滤筛选处理，然后maildrop就会把邮件存到本地形成文件，然后给邮件分类为工作、生活、重要、垃圾等。
+
+maildrop 的配置文件是 ~/.mailfilter ，记得改权限：chmod 600 ~/.mailfilter。
+
+
+配置procmailrc收件:
+
+```
+	
+	$ vim ~/.mailfilter
+	$ chmod 600 ~/.mailfilter
+```
+
+参考配置: 
+
+```
+	DEFAULT="/home/xxx/Mail/Inbox/"
+	logfile "/home/xxx/.maillog"
+	IMPORTANT "/home/xxx/Mail/Inbox/.IMPORTANT"
+	SELF "/home/xxx/Mail/Inbox/.SELF"
+
+	#Move emails from a specific sender to the "Important" folder
+	if (/^From:.*important_sender@example\.com/)
+	{
+	    to $IMPORTANT
+	}
+	
+	if (/^From: slef@xxx\.com/)
+	{
+	    to $IMPORTANT
+	}	
+	
+	# Discard emails from a specific domain
+	#if (/^From:.*@spamdomain\.com/)
+	#{
+	#    exception
+	#}
+```
+
+```
+	
+	$ mkdir  ~/Mail
+	$ maildirmake ~/Mail/Inbox
+	$ maildirmake ~/Mail/Inbox/.IMPORTANT
+	$ maildirmake ~/Mail/Inbox/.SELF
+```
+
+### 配置MUTT主界面
+
+```
+	$ vim ~/.muttrc 
+	$ chmod 600 ~/.muttrc
+```
+muttrc 参考配置: 
+
+```
+	
+	# .muttrc
+	auto_view text/html
+	# ================  IMAP ====================
+	set mbox_type=Maildir
+	set folder = "$HOME/Mail/Inbox"
+	mailboxes "/home/guoweikang/Mail/Inbox/.IMPORTANT"  "~/Mail/Inbox/.SELF"
+	#set mask="^!\\.[^.]"  # 屏蔽掉.开头的邮箱
+	set spoolfile = "$HOME/Mail/Inbox" #INBOX
+	set mbox="$HOME/Mail/Inbox"   #Seen box
+	set record="+Sent"  #Sent box
+	set postponed="+Drafts"  #Draft box
+	set sort=threads
+	
+	# ================  SEND  ====================
+	set sendmail="/usr/bin/msmtp"           # 用 msmtp 发邮件
+	set realname = "xxxx"
+	set from = "xxxxxxxxx@xxxxxxxxx.com"
+	set use_from = yes
+	
+	# ================  Composition  ====================
+	set realname = "xxxxxxxxx"
+	set use_from = yes
+	set editor = vim
+	set edit_headers = yes  # See the headers when editing
+	set charset = UTF-8     # value of $LANG; also fallback for send_charset
+	# Sender, email address, and sign-off line must match
+	unset use_domain        # because joe@localhost is just embarrassing
+	set envelope_from=yes
+	set move=yes    #移动已读邮件
+	set include #回复的时候调用原文
+	macro index,pager I '<shell-escape> fetchmail -vk<enter>'
+
+```
+
+### 测试基本功能
+
+
+#### 发送邮件
+
+```
+	$   echo "hello world" | mutt -s "test" -- xxxx@xxxxx -- 测试发送邮件 
+```
+
+#### 接收邮件
+
+```
+	$ mutt 
+```
+
+进入界面后 输入 "I" 触发fetchmail 
+
+!()[./images/env/2.png]
+
+输入 "c" 切换邮箱
+
+!()[./images/env/c.png]
+
+
+
+### 测试一个补丁
+本小节，通过制作补丁 发送补丁 回复补丁 这三个步骤演示
+
+#### 制作补丁
+
+
+在next分支修改代码，并本地提交,属于基本的GIT操作，不在这里介绍了。格式如下
+
+```
+$ git commit -s
+```
+
+内容格式如下:
+
+!()[./images/env/4.png]
+
+
+制作检查本地补丁:
+
+```
+	$ git  format-patch  --subject-prefix='PATCH'   -1 
+	$ 本地目录生成  0001-debugobjects-add-pr_warn.patch
+	$ ./scripts/checkpatch.pl  0001-debugobjects-add-pr_warn.patch  --检查补丁
+```
+
+#### 发送补丁
+
+获取补丁接收人
+
+```
+	$./scripts/get_maintainer.pl  0001-debugobjects-add-pr_warn.patch  --获取邮件接收人
+```
+
+!()[./images/env/5.png]
+
+ 
+前面的是需要主送的，open是需要抄送的，
+
+因为是测试，我们只发送给自己:
+
+```
+	$ git  send-email --to  xxxx@xxxx.com --cc xxxx@xxx.com  0001-debugobjects-add-pr_warn.patch 
+```
+
+#### 回复补丁
+
+mutt 应该可以收到邮件，我们假设我们是 maintainer， 对邮件进行回复，提出意见
+
+!()[./images/env/6.png]
+
+#### 参考
+[最佳实践参考](https://www.xcodesucks.top/articles/%E4%B8%BA%20Linux%20%E5%86%85%E6%A0%B8%E6%8F%90%E4%BA%A4%20Patch%EF%BC%9A%E6%9C%80%E7%AE%80%E5%AE%9E%E8%B7%B5.html)
+
+[官方指导](https://www.kernel.org/doc/html/v4.17/process/submitting-patches.html)
+
 ## 内核开发
 
-
 ### 常用构建命令和含义
-
 
 - make mrproper : 清理配置文件、过程中间件等一切中间产物，只保留干净的源码
 - make clean/distclean ： 一般项目构建不在使用了 使用mrproper 重新构建
@@ -46,10 +329,6 @@
 - make xxx_defconfig : 生成.config 
 - make menuconfig : 配置defconfig 
 - make defconfg: 最小化defconfig 可以用来保存为平台defconfig
-
-### 开源社区邮件使用
-
-参考环境准备章节邮件客户端配置 
 
 
 ### 关于补丁验证
@@ -130,6 +409,3 @@ bug检查
  - Reported-by: bug 发现人
  - Tested-by：补丁测试人
  - Reviewed-by： 补丁review 者
- 
-
- 
