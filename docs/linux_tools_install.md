@@ -43,8 +43,8 @@
 
 !!! note
 
-  大多数内核邮件列表都在 vger.kernel.org 上运行；主列表可在以下位置找到： http://vger.kernel.org/vger-lists.html
-  不过，其他地方也有一些列表；其中一些位于 redhat.com/mailman/listinfo
+    大多数内核邮件列表都在 vger.kernel.org 上运行；主列表可在以下位置找到： http://vger.kernel.org/vger-lists.html
+	不过，其他地方也有一些列表；其中一些位于 redhat.com/mailman/listinfo
 
 ### 邮件客户端配置
 
