@@ -96,8 +96,7 @@ kobject 的引用计数是kref，他的释放函数呢？
 kobject_init 会明确要求需要传入一个kobj_type对象，这个结构如下
 
 ```
-	
-	struct kobj_type {
+struct kobj_type {
 	void (*release)(struct kobject *kobj);
 	const struct sysfs_ops *sysfs_ops;
 	struct attribute **default_attrs;	/* use default_groups instead */
@@ -122,7 +121,8 @@ kobject_init 会明确要求需要传入一个kobj_type对象，这个结构如�
 ```
 
 简单说明一下：
-  - kobject_init：初始化kobject 的基本字段和状态，设置 state_initialized标志位， 初始化ktype以及kref引用计数
+
+  - kobject_init：初始化kobject的基本字段和状态，设置 state_initialized标志位， 初始化ktype以及kref引用计数
   - kobject_create：kobject_init的封装版本，会通过kzalloc动态申请内存，并且使用默认的 kobj_type 初始化kobject
   - kobject_add: 把kobject 加入到sysfs
   - kobject_create_and_add： 上面两个函数的封装
@@ -171,13 +171,12 @@ kobject_init 会明确要求需要传入一个kobj_type对象，这个结构如�
 通过上面代码 我们可以看到sys在根目录下生成了 test 目录 下面是创建目录的核心代码逻辑
 
 ```
-
     - kobject_create_and_add
 	 - kobject_create
 	  - kzalloc(动态分配kobject)
 	  - kobject_init(kobj, &dynamic_kobj_ktype) //利用dynamic_kobj_ktype 作为ktype初始化，release就是kfree释放内存
 		- kobject_init_internal： //初始化引用计数 初始化状态标志位 初始化 entry
-		- kobj->ktype = ktype; // 初始化keype 
+		- kobj->ktype = ktype; // 初始化ktype 
 	 - kobject_add
       - kobject_add_varg
 	   - kobj->parent = parent;//设置父目录
@@ -187,7 +186,8 @@ kobject_init 会明确要求需要传入一个kobj_type对象，这个结构如�
 		- create_dir(创建目录 和 目录下的文件)
         - state_in_sysfs =1 // 初始化状态标志位
 ```
-		
+
+
 下面是目录删除的核心逻辑
 ```
 	
@@ -214,7 +214,7 @@ kobject_init 会明确要求需要传入一个kobj_type对象，这个结构如�
 	
 	struct attribute {
 		const char		*name; //指定文件名称
-		umode_t			mode;  // 文件的访问权限
+		umode_t			mode;  //文件的访问权限
 	};
 	
 	struct attribute_group {
