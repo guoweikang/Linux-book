@@ -29,6 +29,12 @@ nav:
   - 基础机制:
     - '并发同步': 'foundation/lock.md'
     - 'sysfs': 'foundation/sysfs.md'
+  - ARM异常机制: 
+    - '简介': 'interrupt/index.md'
+    - 'ARM64单CPU': 'interrupt/arm64.md'
+  
+  - 驱动子系统:
+      - '简介': 'mem/index.md'
 
   - 内存子系统: 
     - '简介': 'mem/index.md'
@@ -38,10 +44,10 @@ nav:
     - '物理内存回收': 'mem/compacation.md'
     - '调试': 'mem/debug.md'
     - '官网翻译': 'mem/doc.md'
-  - ARM异常机制: 
-    - '简介': 'interrupt/index.md'
-    - 'ARM64单CPU': 'interrupt/arm64.md'
+  - 文件系统:
+  
 
+  
   - DFX:
     - 'gdb': 'debug/gdb.md'
     - 'debug_objects': 'debug/debug_objects.md'

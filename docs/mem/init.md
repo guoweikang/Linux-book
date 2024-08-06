@@ -22,6 +22,8 @@ adrp 指令: ADRP  Xd, label; 利用当前PC 和label的相对地址，计算lab
 
 内核的地址分布描述定义在:  `arch/arm64/include/asm/memory.h` 
 假设当前配置: 4K页(`CONFIG_PAGE_SHIFT=12`) VA地址是48BIT(`256TB`)
+
+
 ```
 	/* 
 	 * STRUCT_PAGE_MAX_SHIFT 定义了一个 管理页表结构(struct page)的大小
@@ -175,6 +177,7 @@ SECTIONS 描述了段的定义也可以直接通过 `readelf -d  vmlinux` 获取
 
 关键函数说明: `.macro map_memory, tbl, rtbl, vstart, vend, flags, phys, order, istart, iend, tmp, count, sv, extra_shift`
 参数列表：
+
 - tbl：页表的位置。
 - rtbl：第一个级别的页表项应使用的虚拟地址。
 - vstart：映射范围的起始虚拟地址。
@@ -183,6 +186,7 @@ SECTIONS 描述了段的定义也可以直接通过 `readelf -d  vmlinux` 获取
 - phys：与vstart对应的物理地址，假定物理内存是连续的。
 - order：一个值，表示页表的级别，即#imm（立即数）的2的对数，它表示PGD表中的条目数。
 - istart, iend, tmp, count, sv, extra_shift：这些是临时寄存器和标志，用于在宏内部进行计算和存储中间值。
+
 
 map_memory 给定的参数映射虚拟地址到物理地址，计算页表级别，并填充页表的不同级别。根据宏的调用情况，它可能涉及多个级别的页表。
 
@@ -252,19 +256,23 @@ bl      finalise_el2                    // Prefer VHE if possible
 ldp     x29, x30, [sp], #16
 bl      start_kernel                    // 正式进入内核
 ASM_BUG()
- ```
+```
+
 
 ## 初级内存管理
 
 回顾上一节，我们讲过了 内核的镜像是如何被加载到内存，以及内核镜像自己又是如何建立页表，开启MMU，然后又重新建立映射的，
+
 上述过程会涉及到两个页表: `idmap_pg_dir` 以及 `init_pg_dir` 
 
 但是无论如何, 之前的动作 主要目的是为了后续 代码能够在虚拟内存的地址范围内执行
 
 本节我们继续探讨物理内存是怎么管理的
 
+
 ### 设备树内存映射
 为了管理物理内存，首先要知道有多大的物理内存，以及物理内存在CPU的物理地址范围，换言之，我们需要知道真实硬件的信息，
+
 那就不得不先把设备树解析出来，关于更多设备树的内容，请阅读 驱动章节 
 
 这里先让我们回顾一下 内核线性地址的划分: 
@@ -272,11 +280,10 @@ ASM_BUG()
 ![Screenshot](image/22.png)
 
  
-可以找到一个FIXMAP 的虚拟内存空间，内核会使用这段虚拟内存 做一些前期初始化工作，关于fixmap的地址描述在:
-`/arch/arm64/include/asm/fixmap.h`
+可以找到一个FIXMAP 的虚拟内存空间，内核会使用这段虚拟内存 做一些前期初始化工作，关于fixmap的地址描述在:`/arch/arm64/include/asm/fixmap.h`
 
 内核对于该地址空间的描述: 这段注释解释了在内核中定义的一组特殊虚拟地址，这些地址在编译时是常量，
-但在启动过程中才会与物理地址关联。这些特殊虚拟地址通常用于处理内核启动和底层硬件初始化等任务。
+但在启动过程中才会与物理地址关联。这些特殊虚拟地址通常用于处理内核启动和底层硬件初始化等任务
 
 
 我们通过图示展示一下 fixmap 内存区域主要功能 
@@ -284,6 +291,7 @@ ASM_BUG()
 ![Screenshot](image/29.png)
  
 关键代码: 定义了FIXMAP的大小  以及常用函数
+
 
 ```
 	
@@ -297,6 +305,7 @@ __end_of_permanent_fixed_addresses // 是 enum fixed_addresses 的结束索引
 	
 ```
 
+
 FDT其实一共占了4M的内存，实际上FDT的大小不能超过2M，这样作的目的是处于对齐的考虑
 
 ![Screenshot](image/30.png)
@@ -304,13 +313,12 @@ FDT其实一共占了4M的内存，实际上FDT的大小不能超过2M，这样�
 接下来让我们具体看一下 FDT设备树的内存映射过程
 
 ```
-	
 __primary_switched
    - early_fdt_map(fdt_phys) 
      - early_fixmap_init()  // 初始化 init_pg_dir -> bm_pud -> bm_pmd->bm_pte 的页表
 	 - fixmap_remap_fdt(dt_phys, &fdt_size, PAGE_KERNEL) // 页表填充 FDT，是段映射，只填充到 bm_pmd这一层 
-
 ```
+
 这里我们在复习和学习一下 页表建立和内存映射: 
  - 首先，要先准备好 页表的物理内存 (PGD 1页 PMD(按需 至少1页) PTE(按需 至少一页) ) 
  - 然后，要知道要映射的 VA地址, 知道VA以后，可以知道要填充 哪条 PGD/PUD/PMD ENTRY
@@ -352,6 +360,7 @@ fdt的第一次访问: 在完成fdt的内存映射以及校验和检查， 可�
 [    0.000000] Machine model: BST A1000B FAD-B //黑芝麻
 [    0.000000] Machine model: Machine model: linux,dummy-virt // qemu 
 ```
+
 注意: 这里纠正一下，后面发现，其实FDT再映射的时候，是按照section mapping 映射的，并不会
 使用到PTE页表，bm_pte 是为后面的其他虚拟内存映射准备的
 
@@ -387,8 +396,10 @@ fdt的第一次访问: 在完成fdt的内存映射以及校验和检查， 可�
 因为DTB再VA上 是要求2MB对齐的，所以只映射到了PMD这一级
 
 总结: 
+
  - setup_machine_fdt： 完成FDT的映射，以及扫描FDT设备树节点(内存、串口等信息) 
  - 关于内存: 会把FDT物理内存放在 memblock的保留区，会扫描设备树的可用内存信息 以及 reserver 内存信息
+
 
 ## memblock管理器
 
@@ -434,6 +445,7 @@ memblock的初始化 会默认是给一个控的静态数据结构(memblock.c)
 
 setup_machine_fdt 会扫描 memory节点，并把内存插入到 memory中，可以通过给内核传入 
 memblock=debug开关打开相关日志 
+
 
 ```
 [    0.000000] Booting Linux on physical CPU 0x0000000000 [0x411fd050]
@@ -500,10 +512,13 @@ memblock=debug开关打开相关日志
 [    0.000000] psci: probing for conduit method from DT.
 
 ```
+
+
 可以看到内核会连续扫面fdt，把在设备树配置的可用内存和保留内存分别加入到memblock中
 
 这里还需要注意，从日志可以看到 arm64_memblock_init 会remove掉一些内存，这些内存一旦被remove
 则表示内核不可见，我们接下来对这几个remove 的操作尝试分析一下: 
+
 
 ```	
 	/* Remove memory above our supported physical address size */
@@ -575,12 +590,14 @@ void __init paging_init(void)
 ![Screenshot](image/35.png)
 
 
-无论如何，目前我们基本完成了内核的初级内存管理。下面是总结
+### 总结
+
+目前我们基本完成了内核的初级内存管理。下面是总结
  
  - init_pg_dir不再使用  内核全局页表PGD 都存储再swapper_pg_dir 
  - 依然保留了 idmap映射 (TTBR1的替换依赖TTBR0的访问)
  - 系统内存目前都可以通过虚拟内存访问 物理内存 到内核的虚拟地址，是线性映射的关系 
- - 常用的两个地址转换函数: virt_to_phys/phys_to_virt 
+ - 常用的两个地址转换函数: `virt_to_phys` `phys_to_virt`
 
 
 
