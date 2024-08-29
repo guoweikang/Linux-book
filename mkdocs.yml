@@ -29,13 +29,6 @@ nav:
   - 基础机制:
     - '并发同步': 'foundation/lock.md'
     - 'sysfs': 'foundation/sysfs.md'
-  - ARM异常机制: 
-    - '简介': 'interrupt/index.md'
-    - 'ARM64单CPU': 'interrupt/arm64.md'
-  
-  - 驱动子系统:
-      - '简介': 'mem/index.md'
-
   - 内存子系统: 
     - '简介': 'mem/index.md'
     - '内存初始化': 'mem/init.md'
@@ -44,19 +37,14 @@ nav:
     - '物理内存回收': 'mem/compacation.md'
     - '调试': 'mem/debug.md'
     - '官网翻译': 'mem/doc.md'
+  - 驱动子系统:
+      - 'dts': 'driver/dts.md'
   - 文件系统:
-  
-
-  
+   - 'nvme': 'fs/nvme.md'
+  - ARM异常机制: 
+    - '简介': 'interrupt/index.md'
+    - 'ARM64单CPU': 'interrupt/arm64.md'
   - DFX:
     - 'gdb': 'debug/gdb.md'
     - 'debug_objects': 'debug/debug_objects.md'
-
-
-#  - 驱动子系统: 
-
- # - 并发:
-
-
- # - RUST for Linux:
 
