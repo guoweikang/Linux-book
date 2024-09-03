@@ -39,6 +39,7 @@ nav:
     - '官网翻译': 'mem/doc.md'
   - 驱动子系统:
     - 'dts': 'driver/dts.md'
+    - 'clk': 'driver/clk.md'
   - 文件系统:
     - 'nvme': 'fs/nvme.md'
   - ARM异常机制: 
