@@ -8,6 +8,10 @@
 
 重点研究Linux 在clk 子系统的抽象和实现，认为这部分属于操作系统和驱动子系统的核心关键代码部分，会介绍一些核心代码实现
 
+!!!Note
+
+    - 代码会做一些精简 只保留核心关键逻辑
+
 #### 概念区分
 
 区分Linux中的时钟和时钟源概念 
@@ -33,8 +37,11 @@ SOC时钟一般可以有三种方式获得
        
 
     问：为什么不用外部高频晶振产生高频率信号直接给cpu？
+    
     答：主要是因为芯片外部电路不适宜使用高频率，因为传到辐射比较难控制：高频率的晶振太贵了。
+    
     问: 为什么要内部先高频，然后再分频？
+    
     答：主要因为SOC内部有很多部件都需要时钟，而且各自需要的时钟频率不同，没法统一供应，
     因此设计思路是PLL后先得到一个最高的频率(1GHZ、1.2GHZ），然后各个外设都有自己的分频器再分频得到自己想要的频率。
 
@@ -68,8 +75,6 @@ SOC时钟一般可以有三种方式获得
 
 - clk provider： 每个clk 的具体驱动实现
 
-
-
 ![](./images/1.svg)
 
 #### clk-get（consumer API）
@@ -81,26 +86,62 @@ SOC时钟一般可以有三种方式获得
   { 
           const char *dev_id = dev ? dev_name(dev) : NULL;
           struct clk_hw *hw;   
-  
+
           if (dev && dev->of_node) {  
                   // 方法1  OF DTS获取  
                   hw = of_clk_get_hw(dev->of_node, 0, con_id);
-                  if (!IS_ERR(hw) || PTR_ERR(hw) == -EPROBE_DEFER)
-                          return clk_hw_create_clk(dev, hw, dev_id, con_id);
+                  return clk_hw_create_clk(dev, hw, dev_id, con_id);
           }                    
           // 方法2 sys获取  
           return __clk_get_sys(dev, dev_id, con_id);//  
   } 
-  EXPORT_SYMBOL(clk_get); 
 ```
 
 `clk_get` 属于`CCF` 提供给外部驱动的接口，具体实现其实依赖了两个机制，一个是 利用设备树列表信息获取clk，一个是从系统clk维护列表中获取；
 
+我们再下一节会先讲一下 设备树相关实现接口；但是再进入下一小节之前，我们先看一下代码， `of_clk_get_hw`拿到的是clk_hw; 需要通过 `clk_hw_create_clk` 临时申请一个 `clk`给到外部调用者，也说明了 `struct clk` 是为消费者服务的
 
+```c
+ struct clk *clk_hw_create_clk(struct device *dev, struct clk_hw *hw,
+                                const char *dev_id, const char *con_id)
+  {
+          struct clk *clk;
+          struct clk_core *core;
+          core = hw->core;
+          clk = alloc_clk(core, dev_id, con_id);
+          clk->dev = dev;
+          // 非常重要 consumer 的clk 和 clk_core建立了联系
+          clk_core_link_consumer(core, clk);
+          return clk;
+  }
+```
 
-#### of clk
+#### of  clk
 
-我们先看第一个 设备树的clk信息维护,下面是一个 裁剪后的`i2c`的设备树描述，我们关注其中的`clocks` 字段描述,  可以看到 是可以通过 某个具体的驱动设备树(这里指I2C)描述 找到对应的`clocks` （这里指`clkc`）以及`clocks`的参数(这里指`LSP0_PCLK`) 
+下图是 of clk 的设计<mark>机制</mark>
+
+![](./images/8.png)
+
+驱动如果要支持此机制，首先需要驱动程序把自己注册到`provider` 列表上,下面是某个驱动相关代码
+
+```c
+of_clk_add_provider(np, of_clk_src_onecell_get, &bst_clk_data);
+ {
+          struct of_clk_provider *cp;
+          int ret;
+          cp = kzalloc(sizeof(*cp), GFP_KERNEL);
+          cp->node = of_node_get(np);
+          cp->data = data;
+          cp->get = clk_src_get;
+
+          mutex_lock(&of_clk_mutex);
+          list_add(&cp->link, &of_clk_providers);
+          mutex_unlock(&of_clk_mutex);
+          pr_debug("Added clock from %pOF\n", np);
+}
+```
+
+下面是一个 裁剪后的`i2c`的设备树描述，我们关注其中的`clocks` 字段描述,  可以看到 是可以通过 某个具体的驱动设备树(这里指I2C)描述 找到对应的`clocks` （这里指`clkc`）以及`clocks`的参数(这里指`LSP0_PCLK`) 
 
 ```
      i2c0: i2c@20000000 {
@@ -117,4 +158,24 @@ SOC时钟一般可以有三种方式获得
      };  
 ```
 
-`clkc` 实际上就是就是我们的clocks 时钟树的设备树描述信息
+`clkc` 实际上就是就是我们的clocks 时钟树的设备树描述信息, 现在我们继续找到  
+
+`of_clk_get_hw` 的<mark>定义</mark>
+
+```c
+  struct clk_hw *of_clk_get_hw(struct device_node *np, int index,
+                               const char *con_id)             
+  {
+          int ret;             
+          struct clk_hw *hw;   
+          struct of_phandle_args clkspec; 
+
+          //可以得到 clks的参数
+          of_parse_clkspec(np, index, con_id, &clkspec);  
+          // 利用clks的参数回调对应provider get_hw函数
+          hw = of_clk_get_hw_from_clkspec(&clkspec);
+          return hw;           
+  } 
+```
+
+#### of cl

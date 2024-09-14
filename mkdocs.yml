@@ -46,5 +46,7 @@ nav:
     - '简介': 'interrupt/index.md'
     - 'ARM64单CPU': 'interrupt/arm64.md'
   - DFX:
+    - 'log': 'debug/log.md'
     - 'gdb': 'debug/gdb.md'
+    - 'ftrace': 'debug/ftrace.md'
     - 'debug_objects': 'debug/debug_objects.md'
