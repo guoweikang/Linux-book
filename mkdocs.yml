@@ -45,8 +45,12 @@ nav:
   - ARM异常机制: 
     - '简介': 'interrupt/index.md'
     - 'ARM64单CPU': 'interrupt/arm64.md'
-  - DFX:
+  - DFX工具系列:
     - 'log': 'debug/log.md'
     - 'gdb': 'debug/gdb.md'
-    - 'ftrace': 'debug/ftrace.md'
+    - 'trace手册': 'debug/ftrace.md'
+    - 'ftrace设计': 'debug/ftrace-design.md'
+    - 'ftrace-tools': 'debug/ftrace_tools.md'
+    - 'kprobe': 'debug/kprobe.md'
+    - 'event': 'dsebug/events.md'
     - 'debug_objects': 'debug/debug_objects.md'

@@ -151,6 +151,23 @@ $ qemu-system-x86_64 -s -kernel arch/x86/boot/bzImage \
 $ qemu-system-aarch64 -M virt -cpu cortex-a57 -smp 1 -m 4G   -kernel build_qemu/arch/arm64/boot/Image  -nographic  -initrd ../busybox-1.36.1/initramfs.cpio.gz  -append " earlycon root=/dev/ram rdinit=/bin/sh "
 ```
 
+#### 网络配置
+
+虚拟机网络一般我们使用最简单的nat 转发即可
+
+```shell
+qemu-system-aarch64  -machine virt  -cpu cortex-a57  -nographic  -smp 2  -m 4096  -kernel build_qemu/arch/arm64/boot/Image -append "root=/dev/vda rw console=ttyAMA0"   -drive if=none,file=../busybox-1.36.1/rootfs.img,id=hd0,format=raw  -device virtio-blk-device,drive=hd0  -netdev user,id=net0  -device virtio-net-device,netdev=net0    
+```
+
+guest中配置为`auto` 或者默认`dhcp`即可
+
+```shell
+sudo nmcli connection add type ethernet ifname eth0 con-name eth0
+sudo nmcli connection modify eth0 ipv4.method auto
+sudo nmcli connection up eth0
+sudo nmcli connection modify eth0 connection.autoconnect yes
+```
+
 ## 内核参数
 
 内核支持的参数[文档说明](https://www.kernel.org/doc/html/v4.14/admin-guide/kernel-parameters.html)
