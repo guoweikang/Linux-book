@@ -555,3 +555,11 @@ unsigned long ftrace_get_addr_new(struct dyn_ftrace *rec)
 - `ftrace`对执行效率做了优化： 如果系统全局 `ftrace` 回调只有1个， 全局的回调函数就是他自己，否则则是 `ftrace_ops_list_func`  默认遍历全局 `ftrace_ops` 
 
 - `ftrace`对执行效率做了优化, 如果 某个 `dyn_trace` 只有一个`ftrace_ops` 则可以不走 全局回调函数，直接走 该回调函数，否则会设置为全局回调函数
+
+#### 插桩需求功能覆盖
+
+- 可以支持大部分内核函数(只要增加了编译选项) 实现插桩
+
+- 支持 `func`过滤，也就是给指定函数 插桩
+
+- 支持`pid`  `mod`过滤使能

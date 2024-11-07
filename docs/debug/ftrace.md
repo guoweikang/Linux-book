@@ -1,10 +1,69 @@
 ## Trace用户手册
 
-`Ftrace` 狭义上是指`Function Trace` ,但是实际上`linux` 基于`ftrace` 实现了很多封装好的比如`latency tracer`系列功能 ，现在可以用于实现 **性能分析** **调度分析**等
+从本章节开始，我们开始介绍内核的`probe handler`调试手段。包括`ftrace` `kprobe`
+
+`uprobe` `tracepoints` `event traceing` `ebpf`等等
+
+### 背景知识
+
+介绍`trace`的背景
+
+#### 需求
+
+假设，我们现在正在开发或者测试或者定位内核的代码实现，比如
+
+```c
+int inc(int *data) {
+    if(data) {
+        return -1;
+    }
+    *data +=1;
+    return 0;
+}
+```
+
+我们希望查看 `inc`函数执行过程，最一般的方法可能就是使用 我们之前讲过的`printk`
+
+```c
+int inc(int *data) {
+    if(data) {
+        pr_dbg("inc data is null!\n");
+        return -1;
+    }
+    pr_dbg("inc data before is %d\n",*data);
+    *data +=1;
+    pr_dbg("inc data after is %d\n",*data);
+    return 0;
+}
+```
+
+在软件代码开发中，这样作的代价是？
+
+- 每次增加调试内容，都需要修改代码和重新编译
+
+- 每次删除调试内容，也需要修改代码和重新编译
+
+需求产生了： 
+
+- 在内核代码的任意位置中插入钩子函数
+- 钩子函数可以获得当前上下文内容(函数、参数)
+- 钩子函数可以动态的`enable/disable`
+
+当然，又因为`Linux` 是多用户多应用操作系统，某个函数 可能被多个应用程序调用；
+
+因此可能我们只希望关注于某个`进程的`  或者是模块的，因此又有新的需求产生了 
+
+- 钩子函数可以支持一些高级过滤功能
+
+#### 概念澄清
+
+`ftrace`在内核中可能有概念混淆，我分为广义和侠义
+
+- 侠义的概念，特指基于 `-pg` `mcount` 实现的内核插桩
+
+- 广义的概念，指基于不同的计数，但是都实现了部分上述需求功能的子系统
 
 `Ftrace` 是一种内部跟踪器，旨在帮助系统开发人员和设计人员了解内核内部的情况，可用于调试或分析用户空间以外的延迟和性能问题(用户态通过`trace_marker` 接口，也可以把用户态 内核态行为一起用于分析，比如`Android`提供的 `atrace`)
-
-虽然 `ftrace` 通常被认为是函数跟踪器，但它实际上是多个不同跟踪工具的框架。 有延迟跟踪，可检查中断禁用和启用之间发生的情况，以及抢占和从任务唤醒到任务实际调度的时间,他们或许用到或许没有用到`ftrace`的回调函数，但是现在我们统一称之为`Tracing 子系统`
 
 `ftrace` 最常用的一种使用形式可能是`events tracing` ，在内核中，再各个模块有几百个静态事件的点，可以通过`tracefs` 使能使用，关于`events`我们单独在后面章节探讨。
 
@@ -1163,7 +1222,7 @@ exec "$@"
 
 显示内容的列可以动态启用/禁用。 可以根据自己的需要使用各种选项组合。
 
--  `CPU` ：  有时最好只跟踪一个 CPU（参见 `tracing_cpu_mask` 文件），否则在切换 CPU 跟踪时，有时可能会看到无序的函数调用。
+- `CPU` ：  有时最好只跟踪一个 CPU（参见 `tracing_cpu_mask` 文件），否则在切换 CPU 跟踪时，有时可能会看到无序的函数调用。
   
   ```shell
   # echo nofuncgraph-cpu > trace_options
@@ -1186,7 +1245,6 @@ exec "$@"
   ```
 
 ```vim
-
   3) # 1837.709 us |          } /* __switch_to */
   3)               |          finish_task_switch() {
   3)   0.313 us    |            _raw_spin_unlock_irq();
@@ -1221,40 +1279,35 @@ exec "$@"
     0)    sh-4802     |   5.151 us    |                  }
     0)    sh-4802     | + 49.370 us   |                }
   ```
-  
-  
 
 - 绝对时间： 默认不启用
   
   ```shell
   hide: echo nofuncgraph-abstime > trace_options
   show: echo funcgraph-abstime > trace_options
-  
-  
-  ```
-  
-  示例: 
-  
-  ```vim
-    #
-    #      TIME       CPU  DURATION                  FUNCTION CALLS
-    #       |         |     |   |                     |   |   |   |
-    360.774522 |   1)   0.541 us    |                                          }
-    360.774522 |   1)   4.663 us    |                                        }
-    360.774523 |   1)   0.541 us    |                                        __wake_up_bit();
-    360.774524 |   1)   6.796 us    |                                      }
-    360.774524 |   1)   7.952 us    |                                    }
-    360.774525 |   1)   9.063 us    |                                  }
-    360.774525 |   1)   0.615 us    |                                  journal_mark_dirty();
-    360.774527 |   1)   0.578 us    |                                  __brelse();
-    360.774528 |   1)               |                                  reiserfs_prepare_for_journal() {
-    360.774528 |   1)               |                                    unlock_buffer() {
-    360.774529 |   1)               |                                      wake_up_bit() {
-    360.774529 |   1)               |                                        bit_waitqueue() {
-    360.774530 |   1)   0.594 us    |                                          __phys_addr();
   ```
 
+```
+示例: 
 
+```vim
+  #
+  #      TIME       CPU  DURATION                  FUNCTION CALLS
+  #       |         |     |   |                     |   |   |   |
+  360.774522 |   1)   0.541 us    |                                          }
+  360.774522 |   1)   4.663 us    |                                        }
+  360.774523 |   1)   0.541 us    |                                        __wake_up_bit();
+  360.774524 |   1)   6.796 us    |                                      }
+  360.774524 |   1)   7.952 us    |                                    }
+  360.774525 |   1)   9.063 us    |                                  }
+  360.774525 |   1)   0.615 us    |                                  journal_mark_dirty();
+  360.774527 |   1)   0.578 us    |                                  __brelse();
+  360.774528 |   1)               |                                  reiserfs_prepare_for_journal() {
+  360.774528 |   1)               |                                    unlock_buffer() {
+  360.774529 |   1)               |                                      wake_up_bit() {
+  360.774529 |   1)               |                                        bit_waitqueue() {
+  360.774530 |   1)   0.594 us    |                                          __phys_addr();
+```
 
 - 显示函数结束注释
   
@@ -1331,15 +1384,11 @@ echo 1 > /proc/sys/kernel/stack_tracer_enabled
   trace_printk("I'm a comment!\n")
   ```
   
-  ``` vim
+  ```vim
    1)               |             __might_sleep() {
    1)               |                /* I'm a comment! */
    1)   1.449 us    |             }
   ```
-  
-  
-
-
 
 ### dynamic ftrace
 
