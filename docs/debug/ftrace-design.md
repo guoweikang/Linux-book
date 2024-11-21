@@ -1,4 +1,4 @@
-## Tracing 设计
+## Tracing机制之一： 插桩设计
 
 ### 插桩基础
 
@@ -248,30 +248,9 @@ ftrace_init
 
 4. ``touched_functions`：显示曾经插桩跟踪过的函数信息
 
-#### 插桩回调函数设计
+#### 插桩信息注册维护
 
-上一个小节，我们已经有了系统中所有插桩点的信息，那么针对这些插桩点，如何注册回调函数，以及又是如何实现插桩点过滤的呢？本小节围绕针对插桩点的 `回调函数`展开
-
-##### 插桩代码替换的数据竞争
-
-```asmatmel
-<schedule>:
- 55 push                    %rbp
- 48 89 e5                   mov %rsp,%rbp
- 0f 1f 44 00 00             nop   //插桩点
- 5d                         pop %rbp
- 48 8b 04 25 80 d0 15       mov 0xffffffff8115d080,%rax
- 81
- 48 8b 00                    mov (%rax),%rax
- e9 96 fa ff ff              jmpq ffffffff810f40a0 <__schedule>
- 66 0f 1f 44 00 00           nopw 0x0(%rax,%rax,1)x,%rax,1)
-```
-
-我们希望替换 插桩点 `nop` 指令为： `e8 37 2e 00 00 callq ffffffff810f7430`
-
-如果我们代码是运行在 单`CPU` 下面，替换就很简单： 修改对应内存为`可读写` 然后修改指令,但是`SMP`和多核环境，问题就变得复杂很多 ，主要是不同`CPU` 对该代码的 访问竞争,尤其是在不同架构下，如果前后指令有依赖，则更加复杂( 多字节指令 替换的非原子性)
-
-具体就是使用了 `breakpoints` 机制，争取原子性的 指令替换
+上一个小节，我们已经有了系统中所有插桩点的信息，那么针对这些插桩点，如何注册回调函数，以及又是如何实现插桩点过滤的呢？
 
 ##### 回调函数定义：ftrace_func_t
 
@@ -282,7 +261,7 @@ void callback_func(unsigned long ip, unsigned long parent_ip,
                    struct ftrace_ops *op, struct pt_regs *regs);
 ```
 
-- ip: 这是正在跟踪的函数的指令指针。
+- ip: 这是正在跟踪的函数的指令指针
 
 - parent_ip: 这是调用被跟踪函数的函数指令指针（函数调用发生的位置）。
 
@@ -328,7 +307,9 @@ void callback_func(unsigned long ip, unsigned long parent_ip,
 
 ##### 回调注册接口
 
-`register_ftrace_function` 注册回调函数 
+unregister/register_ftrace_function 注册回调函数 
+
+##### 函数过滤设置
 
 `ftrace_set_filter/notrace`设置过滤规则
 
@@ -339,6 +320,10 @@ int ftrace_set_filter(struct ftrace_ops *ops, unsigned char *buf,
 int ftrace_set_notrace(struct ftrace_ops *ops, unsigned char *buf,
                        int len, int reset);;
 ```
+
+注意事项：
+
+- `reset` 表示是否需要重新设置`hash table` 如果设置，原有的`hashtable` 在更新期间会被清空
 
 ##### 全局trace_ops_list
 
@@ -367,80 +352,6 @@ static void add_ftrace_ops(struct ftrace_ops __rcu **list,
           rcu_assign_pointer(*list, ops);
   }
 ```
-
-#### Stack Tracer Sample
-
-我们通过 `stack trace` 为例，讲解 最简单的 回调函数注册流程 
-
-内核支持在`bootup` 阶段支持对某些函数`stack trace` ，通过如下选项
-
-```vim
- stacktrace   [FTRACE]
-               Enabled the stack tracer on boot up.
-
- stacktrace_filter=[function-list]
-         、 [FTRACE] Limit the functions that the stack tracer
-             will trace at boot up. function-list is a comma separated
-             list of functions. This list can be changed at run
-            time by the stack_trace_filter file in the debugfs
-            tracing directory. Note, this enables stack tracing
-            and the stacktrace above is not needed.
-```
-
-我们在 `available_filter_functions`找一个支持过滤我们感兴趣的函数
-
-```
-set bootargs = stacktrace_filter=uart_register_driver`
-```
-
-```vim
-root@localhost:/sys/kernel/tracing# cat stack_trace
-        Depth    Size   Location    (5 entries)
-        -----    ----   --------
-  0)      696      16   uart_register_driver+0x8/0x1a8
-  1)      680      80   serial8250_init+0x70/0x1e8
-  2)      600     128   do_one_initcall+0x60/0x2c0
-  3)      472     112   kernel_init_freeable+0x1fc/0x3f8
-  4)      360     360   kernel_init+0x2c/0x1f0
-```
-
-`stack trace`是一个经典的 通过 `function callback` 实现栈溢出检测的机制
-
-##### 注册准备
-
-`ftrace_ops ` 如果没有特殊的使用要求，该函数的定义 简单到 只需要提供自己的回调函数实现，然后直接调用注册接口即可
-
-```c
-  static struct ftrace_ops trace_ops __read_mostly =
-  { 
-          .func = stack_trace_call,       
-  };
-  static __init int stack_trace_init(void)
-  {
-          int ret;
-
-          ret = tracing_init_dentry();
-          if (ret)
-                  return 0;
-
-          trace_create_file("stack_max_size", TRACE_MODE_WRITE, NULL,
-                          &stack_trace_max_size, &stack_max_size_fops);
-
-          trace_create_file("stack_trace", TRACE_MODE_READ, NULL,
-                          NULL, &stack_trace_fops);
-#ifdef CONFIG_DYNAMIC_FTRACE
-          trace_create_file("stack_trace_filter", TRACE_MODE_WRITE, NULL,
-                            &trace_ops, &stack_trace_filter_          if (stack_trace_filter_buf[0])
-         ftrace_set_early_filter(&trace_ops, stack_trace_filter_buf, 1);
-#endif
-          if (stack_tracer_enabled)
-                  register_ftrace_function(&trace_ops);
-
-          return 0;
-  }
-```
-
-这里我们唯一需要注意的其实就是  `ftrace_set_early_filter` 这个是带有过滤的情况，我们先暂时不考虑，只考虑不带过滤的情况 
 
 ##### 注册流程分析1
 
@@ -548,6 +459,47 @@ unsigned long ftrace_get_addr_new(struct dyn_ftrace *rec)
 
 根据`dyn_trace`的 使能计数情况以及，是否需要 保存REGS，是否需要 `TRAM`  ，选择具体回调函数
 
+##### 设置过滤插桩函数
+
+```c
+ftrace_set_filter(ops. buf,len,reset) 
+  // no trace：  enable=0,  filter： enable =1 
+  ->  ftrace_set_regex(ops, buf, len, reset, 1/0);
+   -> ftrace_set_hash(ops, buf, len, NULL, 0, 0, reset, enable)
+    // enable 决定orgi_hash
+    -> orig_hash = ops->func_hash->filter_hash/notrace_hash
+    // reset 决定newhash 是否需要复制原有的hash 内容
+    -> hash =  alloc_(and_copy)ftrace_hash(FTRACE_HASH_DEFAULT_BITS);
+    // 更新hash entry
+    -> ftrace_match_records(hash, buf, len) 
+        // "!xxx" set clear_filter=1
+       -> filter_parse_regex(buf, len, &func_g.search,&clear_filter);
+       -> enter_record(hash,rec,clear_filter)
+          //clear filter 决定是从hash中移除还是增加 
+         -> free(add)_hash_entr(hash,rec->ip)
+    -> ftrace_hash_move_and_update_ops(ops, orig_hash, hash, enable);
+     // 根据黑白格名单重新设置 全局 dyn trace 记录 
+      ->  ftrace_hash_move(ops, enable, orig_hash, hash) 
+         -> 检查：设置 FTRACE_OPS_FL_IPMODIFY 的traceops 不支持黑名单
+         -> new_hash = __ftrace_hash_move(hash);
+         // 根据原有白名单或者黑名单上的配置，清除插桩信息(因为需要重新设置)
+         -> ftrace_hash_rec_disable_modify(ops, enable) 
+            -> ftrace_hash_rec_update_modify(ops,enable,0) 
+               -> __ftrace_hash_rec_update(ops, enable, 0); 
+          // 更新ops hash 使用新的hash 
+         -> rcu_assign_pointer(*orig_hash, new_hash);
+          // 根据新的白名单或者黑名单上的配置，重新更新插桩点
+         -> ftrace_hash_rec_enable_modify(ops, enable);
+       // 根据黑白格名单重新设置 全局 dyn trace 记录 
+      -> ftrace_ops_update_code(ops, &old_hash_ops);
+         -> ftrace_run_modify_code(ops, FTRACE_UPDATE_CALLS, old_hash);
+           -> ftrace_run_update_code(command);  
+            //不同体系架构 可能实现差异 大致都相同
+            ->arch_ftrace_update_code(command) 
+              ->ftrace_modify_all_code(command)
+                -> __ftrace_replace_code(rec, enable)
+```
+
 #### 插桩设计总结
 
 - 全局的`dyn trace` 是核心，大部分操作都是基于 对 `dyn trace`的遍历实现 
@@ -556,10 +508,4 @@ unsigned long ftrace_get_addr_new(struct dyn_ftrace *rec)
 
 - `ftrace`对执行效率做了优化, 如果 某个 `dyn_trace` 只有一个`ftrace_ops` 则可以不走 全局回调函数，直接走 该回调函数，否则会设置为全局回调函数
 
-#### 插桩需求功能覆盖
-
-- 可以支持大部分内核函数(只要增加了编译选项) 实现插桩
-
-- 支持 `func`过滤，也就是给指定函数 插桩
-
-- 支持`pid`  `mod`过滤使能
+- 当某个 `dyn trace` 执行全局回调函数 `ftrace_trace_function` （遍历 全局`ftrace_ops_list`）时，会检查`trace_ops`是否设置了过滤条件，只有匹配到，才会执行具体`trace_ops`的回调函数

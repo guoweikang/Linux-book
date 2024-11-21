@@ -45,15 +45,15 @@ int inc(int *data) {
 
 需求产生了： 
 
-- 在内核代码的任意位置中插入钩子函数
-- 钩子函数可以获得当前上下文内容(函数、参数)
-- 钩子函数可以动态的`enable/disable`
+- 可以在内核代码的任意位置中插入探测函数（`probe func`）
+- `probe func`可以获得当前上下文内容(函数、参数)
+- `probe func` 最好可以可以动态的`enable/disable`
 
 当然，又因为`Linux` 是多用户多应用操作系统，某个函数 可能被多个应用程序调用；
 
 因此可能我们只希望关注于某个`进程的`  或者是模块的，因此又有新的需求产生了 
 
-- 钩子函数可以支持一些高级过滤功能
+- [`]()probe func`可以支持一些高级过滤功能 `pid ...`
 
 #### 概念澄清
 
@@ -61,7 +61,7 @@ int inc(int *data) {
 
 - 侠义的概念，特指基于 `-pg` `mcount` 实现的内核插桩
 
-- 广义的概念，指基于不同的计数，但是都实现了部分上述需求功能的子系统
+- 广义的概念，指基于不同的机制，但是都实现了部分上述需求功能的子系统
 
 `Ftrace` 是一种内部跟踪器，旨在帮助系统开发人员和设计人员了解内核内部的情况，可用于调试或分析用户空间以外的延迟和性能问题(用户态通过`trace_marker` 接口，也可以把用户态 内核态行为一起用于分析，比如`Android`提供的 `atrace`)
 
@@ -69,7 +69,7 @@ int inc(int *data) {
 
 本章节，更多是站在一个使用者的角度, 学习如何利用`trace`功能进行内核开发定位，以及作为一个后续的使用手册用于查阅。 一开始有很多名词可能会让你困惑，但入门之后，再回头看本章节，你会觉得它很简单
 
-在 **ftrace 设计**章节中，探讨更多`ftrace`的实现细节
+在 后续章节中，探讨更多机制的实现细节
 
 ### 通用介绍
 
@@ -86,7 +86,7 @@ int inc(int *data) {
 
 #### tracefs
 
-`trace fs`是一个非常重要的模块，使用者几乎都必须要通过`trace fs` 和 `ftrace`子系统进行交互(包括： 使能、配置、过滤、结果输出分析) 
+`trace fs`是一个非常重要的模块，使用者几乎都必须要通过`trace fs` 和 `trace`子系统进行交互(包括： 使能、配置、过滤、结果输出分析) 
 
 Linux 内核通过 `tracefs` 文件系统，用来支持 `trace`功能的配置和结果查询， 挂载目录为 `/sys/kernel/tracing`
 
@@ -1332,45 +1332,7 @@ exec "$@"
   0)   2.861 us    |      } /* putname() */
 ```
 
-#### stack trace
-
-由于内核的堆栈大小是固定的，因此不要在函数中浪费堆栈是非常重要的。 内核开发人员必须注意在堆栈上分配的内容。 如果分配过多，系统就会面临堆栈溢出的危险，并发生损坏，通常会导致系统瘫痪。
-
-有一些工具可以检查这一点，通常是通过中断定期检查使用情况。 但如果能在每次函数调用时都进行检查，就会变得非常有用。 由于`ftrace` 提供了一个函数跟踪器，因此可以方便地在每次函数调用时检查堆栈大小。 这可以通过`stack tracer`实现
-
-使能`stack tracer` 通过
-
-```shell
-echo 1 > /proc/sys/kernel/stack_tracer_enabled
-```
-
-通过在内核命令行参数中添加 `stacktrace`（堆栈跟踪），还可以在内核命令行中启用堆栈跟踪功能，以便在启动过程中跟踪内核的堆栈大小，一般输出
-
-```vim
-# cat stack_trace
-        Depth    Size   Location    (18 entries)
-        -----    ----   --------
-  0)     2928     224   update_sd_lb_stats+0xbc/0x4ac
-  1)     2704     160   find_busiest_group+0x31/0x1f1
-  2)     2544     256   load_balance+0xd9/0x662
-  3)     2288      80   idle_balance+0xbb/0x130
-  4)     2208     128   __schedule+0x26e/0x5b9
-  5)     2080      16   schedule+0x64/0x66
-  6)     2064     128   schedule_timeout+0x34/0xe0
-  7)     1936     112   wait_for_common+0x97/0xf1
-  8)     1824      16   wait_for_completion+0x1d/0x1f
-  9)     1808     128   flush_work+0xfe/0x119
- 10)     1680      16   tty_flush_to_ldisc+0x1e/0x20
- 11)     1664      48   input_available_p+0x1d/0x5c
- 12)     1616      48   n_tty_poll+0x6d/0x134
- 13)     1568      64   tty_poll+0x64/0x7f
- 14)     1504     880   do_select+0x31e/0x511
- 15)      624     400   core_sys_select+0x177/0x216
- 16)      224      96   sys_select+0x91/0xb9
- 17)      128     128   system_call_fastpath+0x16/0x1b
-```
-
-### trace_printk
+#### trace_printk
 
 除了已有的`ftrace` 输出外，我们可以在内核通过`trace_printk`  输出日志到`trace`缓冲区，使用`trace_printk`而不是用`printk`原因主要有: 
 
@@ -1389,92 +1351,3 @@ echo 1 > /proc/sys/kernel/stack_tracer_enabled
    1)               |                /* I'm a comment! */
    1)   1.449 us    |             }
   ```
-
-### dynamic ftrace
-
-对于`function trace` 我们很少说不开启动态`ftrace`的，全局函数都作`trace` 无论是性能开销和使用上，几乎都是无法忍受的，再开启`CONFIG_DYNAMIC_FTRACE`的平台上,支持针对指定的函数使能
-
-#### 查看支持动态设置的函数列表
-
-```shell
-# cat  available_filter_functions
-```
-
-#### 指定函数设置回调
-
-设置指定函数 使能 `function tracer` 
-
-```shell
-# echo "func_name" > set_ftrace_filter
-# echo "func_name2" >> set_ftrace_filter // 追加
-```
-
-设置指定函数 不使能 `function tracer`
-
-```shell
-# echo "func_name" > set_ftrace_notrace
-```
-
-设置指定函数 使能 `function graph tracer`
-
-```shell
-# echo __do_fault > set_graph_function   
-# echo __do_fault > set_graph_notrace  
-```
-
-#### 
-
-#### 高级过滤
-
-`set_ftrace_filter` 接口支持一些命令， 跟踪命令的格式如下：
-
-```shell
-<function>:<command>:<parameter>
-```
-
-`mod` :该命令用于启用每个模块的函数筛选。 参数定义了模块。
-
-例如，如果只需要 `ext3` 模块中的 `write*` 函数，则运行 
-
-```shell
-echo 'write*:mod:ext3' > set_ftrace_filter
-```
-
-该命令与过滤器的交互方式与根据函数名过滤的方式相同。 因此，在过滤器文件中添加 (>>) 就可以在不同模块中添加更多的函数。 删除特定模块的功能时，在前面加上`！`：
-
-```shell
-echo '!write*:mod:ext3' >> set_ftrace_filter //删除ext3模块的所有功能函数跟踪
-echo '!*:mod:!ext3' >> set_ftrace_filter // 禁用除了EXT3模块的所有函数
-echo '!*:mod:*' >> set_ftrace_filter // 禁用所有模块的跟踪，但仍跟踪内核：
-echo '*write*:mod:!*' >> set_ftrace_filter // 只为内核设置函数过滤
-```
-
-`traceon/traceoff` :这些命令会在指定函数被触发时打开或关闭跟踪系统。 参数决定了跟踪系统开启和关闭的次数。 如果未指定，则没有限制。 例如，在`__schedule_bug`前5次禁用跟踪，请运行
-
-```shell
-echo '__schedule_bug:traceoff:5' > set_ftrace_filter
-echo '__schedule_bug:traceoff' > set_ftrace_filter //当__schedule_bug 被触发时，始终禁用跟踪：
-```
-
-`snapshot` : 在触发该函数时触发快照。
-
-```shell
-echo 'native_flush_tlb_others:snapshot' > set_ftrace_filter
-```
-
- `enable_event/disable_event` : 这些命令可以启用或禁用跟踪事件。 请注意，由于函数跟踪回调非常敏感，因此在注册这些命令时，跟踪点会被激活，但会以 "软 "模式禁用。 也就是说，跟踪点会被调用，但不会被跟踪。 只要有命令触发，事件跟踪点就会保持这种模式。
-
-```
-<function>:enable_event:<system>:<event>[:count]
-<function>:disable_event:<system>:<event>[:count]
-```
-
-- **`<function>`**：需要跟踪的函数。
-- **`enable_event` / `disable_event`**：指定启用或禁用的事件命令。
-- **`<system>`**：事件所属的系统或子系统（如 `sched`、`irq` 等）。
-- **`<event>`**：具体的事件名称（如 `sched_switch`、`try_to_wake_up` 等）。
-- **`[:count]`**（可选）：指定命令生效的调用次数。
-
-更多使用相关内容 请参考 [ftrace](https://www.kernel.org/doc/Documentation/trace/ftrace.txt)
-
-#### 
