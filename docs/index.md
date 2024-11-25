@@ -10,17 +10,10 @@
 
 前置课程: 计算机原理 操作系统原理
 
-本章作为Linux的一个前置介绍，为了保证后续章节的连续性，主要包含: 
+本章作为一个前置介绍,主要包含: 
 
 - Linux开发环境
 - Linux开发指导
-
-## 知识图谱
-
-<div class="blocks">
-  <a href="index.html#内核版本" class="block">基本介绍 测试1 </a>
-  <a href="foundation/sysfs.html#引用计数" class="block">引用计数 测试2</a>
-</div>
 
 ## 内核版本
 

@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>数据地图</title>
+<link href="css/index.css" rel="stylesheet" type="text/css" media="all" />
+
+
+<body>
+	<div class="wpbox">
+		<div class="bnt">
+			<div class="topbnt_left fl">
+				<ul>
+					<li><a href="index.html">数据地图</a></li>
+					<li class="active"><a href="#">数据分布</a></li>
+					<li><a href="pathanlayze.html">链路分析</a></li>
+				</ul>
+			</div>
+			<h1 class="tith1 fl">数据链路分析</h1>
+			<div class=" fr topbnt_right">
+				<div style="text-align: right;">
+					<input id="nodename" type="text" class="search-input" placeholder="输入表名或者字段查询"/>
+					<a id="searchEventBtn" href="javascript:;" class="search-btn">查询</a>
+				</div>
+			</div>
+		</div>
+		<!-- bnt end -->
+		<div id="graph-panel" style="margin:30px 40px;height:calc(100% - 120px)">
+			
+		</div>
+	</div>
+	
+	<script src="js/log.js"></script>
+	<script src="js/jquery-3.2.0.min.js"></script>
+	<script src="js/autocomplete/autocomplete.js"></script>
+	<script src="js/graphvis.layout.min.js"></script>
+	<script src="js/graphvis.min.20241008.js"></script>
+	<script src="js/treechart.js"></script>
+</body>
+</html>

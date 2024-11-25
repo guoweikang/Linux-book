@@ -5,7 +5,6 @@ theme:
   icon:
     admonition:
         <type>: <icon>
-  custom_dir: docs/static
         
 plugins:
   - search
@@ -26,6 +25,7 @@ markdown_extensions:
 nav:
   - 前言: 
     - '基本介绍': 'index.md'
+    - '知识图谱': 'study_map.md'
     - '内核开发准备': 'linux_tools_install.md'
   - 内核初探:
     - '启动过程': 'init/start.md'
