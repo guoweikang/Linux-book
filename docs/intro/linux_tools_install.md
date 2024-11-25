@@ -36,7 +36,7 @@
 ### 邮件列表
 
 大量的 Linux 内核开发工作是通过邮件列表完成的。如果不加入至少一个列表，就很难成为社区的一名功能齐全的成员。
-但 Linux 邮件列表也对开发人员构成了潜在危险，他们面临着被大量电子邮件淹没、违反 Linux 列表上使用的约定或两者兼而有之的风险。
+但 Linux邮件列表也对开发人员构成了潜在危险，他们面临着被大量电子邮件淹没、违反 Linux 列表上使用的约定或两者兼而有之的风险。
 
 !!! note
 
@@ -47,8 +47,8 @@
 
 参考来自: 
 
-- https://docs.kernel.org/translations/zh_CN/process/email-clients.html
-- https://kofno.wordpress.com/2009/08/09/how-fetchmail-and-mutt-saved-me-from-email-mediocrity/
+- [邮件客户端推荐](https://docs.kernel.org/translations/zh_CN/process/email-clients.html)
+- [安装样例](https://kofno.wordpress.com/2009/08/09/how-fetchmail-and-mutt-saved-me-from-email-mediocrity/)
 
 我们使用 MUTT作为邮件客户端需要搭配其他软件一起使用
 
@@ -80,17 +80,20 @@
 ~/.msmtprc 参考配置: 
 
 ```
-    defaults
-    logfile ~/log/msmtp/msmtp.log
-    account default
-    auth on
-    tls on
-    tls_starttls off
-    host smtp.qq.com
-    port 465
-    from xxxx@qq.com
-    user xxxxx@xxxx.com
-    password xxxxxx
+defaults
+ logfile ~/log/msmtp/msmtp.log
+ account default
+ auth on
+ tls on
+ tls_starttls on
+ tls_trust_file /etc/ssl/certs/ca-certificates.crt
+ host smtp.gmail.com
+ port 587
+ from xxxxx@gmail.com
+ user xxxx@gmail.com
+ password xxx
+
+ 
 ```
 
 ### 配置收件箱
@@ -113,14 +116,15 @@ Fetchmail是一个非常简单的收件程序，而且是前台运行、一次�
 参考配置: 
 
 ```
-    poll imap.xxxx.com
-        with proto IMAP
-        user "user@zoho.com"
-        there with password "pass"
-        is "localuser" here
-        mda "/usr/bin/maildrop " 
-        options
-        ssl
+
+    poll imap.gmail.com
+    with proto IMAP
+    user "xxxx@gmail.com"
+    password "xxxxx"
+    mda "/usr/bin/maildrop" 
+    options
+    ssl
+
 ```
 
 fetchmail只负责收取，不负责“下载”部分，你找不到邮件存在哪了。, 需要配置MDA分类器，如maildrop，才能看到下载后的邮件。
@@ -132,7 +136,7 @@ fetchmail只负责收取，不负责“下载”部分，你找不到邮件存�
 设置Mutt快捷键收取邮件的方法是在~/.muttrc中加入macro：
 
 ```
-    macro index,pager I '<shell-escape> fetchmail -vk<enter>'
+macro index,pager I '<shell-escape> fetchmail -vk<enter>'
 ```
 
 这样的话，可以在index邮件列表中按I执行外部shell命令收取邮件了。
@@ -155,34 +159,63 @@ maildrop 的配置文件是 ~/.mailfilter ，记得改权限：chmod 600 ~/.mail
 参考配置: 
 
 ```
-    DEFAULT="/home/xxx/Mail/Inbox/"
-    logfile "/home/xxx/.maillog"
-    IMPORTANT "/home/xxx/Mail/Inbox/.IMPORTANT"
-    SELF "/home/xxx/Mail/Inbox/.SELF"
+guoweikang@ubuntu-virtual-machine:~$ cat ~/.mailfilter 
+DEFAULT="/home/guoweikang/Mail/inbox/"
+logfile "/home/guoweikang/log/maillog"
+IMPORTANT="/home/guoweikang/Mail/important"
+SELF="/home/guoweikang/Mail/self"
+RUST_FOR_LINUX="/home/guoweikang/Mail/r4l"
+LINUX_TRACE_KERNEL="/home/guoweikang/Mail/linux_trace_kernel"
 
-    #Move emails from a specific sender to the "Important" folder
-    if (/^From:.*important_sender@example\.com/)
-    {
-        to $IMPORTANT
-    }
+#Move emails from a specific sender to the "Important" folder
+if (/^From:.*guoweikang.kernel@gmail\.com/)
+{
+    to $SELF
+}
 
-    if (/^From: slef@xxx\.com/)
-    {
-        to $IMPORTANT
-    }    
+if (/^Cc:.*guoweikang.kernel@gmail\.com/)
+{
+    to $SELF
+}
 
-    # Discard emails from a specific domain
-    #if (/^From:.*@spamdomain\.com/)
-    #{
-    #    exception
-    #}
+if (/^To:.*guoweikang.kernel@gmail\.com/)
+{
+    to $SELF
+}
+
+if (/^Cc:.*rust-for-linux@vger\.kernel\.org/)
+{
+    to $RUST_FOR_LINUX
+}
+
+if (/^To:.*rust-for-linux@vger\.kernel\.org/)
+{
+    to $RUST_FOR_LINUX
+}
+
+if (/^Cc:.*linux-trace-kernel@vger\.kernel\.org/)
+{
+    to $LINUX_TRACE_KERNEL
+}
+
+if (/^To:.*linux-trace-kernel@vger\.kernel\.org/)
+{
+    to $LINUX_TRACE_KERNEL
+}
+
 ```
 
 ```
     $ mkdir  ~/Mail
-    $ maildirmake ~/Mail/Inbox
-    $ maildirmake ~/Mail/Inbox/.IMPORTANT
-    $ maildirmake ~/Mail/Inbox/.SELF
+    $ maildirmake ~/Mail/inbox
+    $ maildirmake ~/Mail/important
+    $ maildirmake ~/Mail/r4l
+    $ maildirmake ~/Mail/self
+    $ maildirmake ~/Mail/postponed
+    $ maildirmake ~/Mail/send    
+    $ maildirmake ~/Mail/linux_trace_kernel
+    $ maildirmake ~/Mail/mbox
+    $ maildirmake ~/Mail/noreply
 ```
 
 ### 配置MUTT主界面
@@ -195,37 +228,40 @@ maildrop 的配置文件是 ~/.mailfilter ，记得改权限：chmod 600 ~/.mail
 muttrc 参考配置: 
 
 ```
-    # .muttrc
-    auto_view text/html
-    # ================  IMAP ====================
-    set mbox_type=Maildir
-    set folder = "$HOME/Mail/Inbox"
-    mailboxes "/home/guoweikang/Mail/Inbox/.IMPORTANT"  "~/Mail/Inbox/.SELF"
-    #set mask="^!\\.[^.]"  # 屏蔽掉.开头的邮箱
-    set spoolfile = "$HOME/Mail/Inbox" #INBOX
-    set mbox="$HOME/Mail/Inbox"   #Seen box
-    set record="+Sent"  #Sent box
-    set postponed="+Drafts"  #Draft box
-    set sort=threads
+# .muttrc
+auto_view text/html
+# ================  IMAP ====================
+set mbox_type= maildir
+set folder = "$HOME/Mail"
+mailboxes +inbox +r4l +self +linux_trace_kernel
+set spoolfile = "$HOME/Mail/inbox" #INBOX
+set mbox="+mbox"   #Seen box
+set record="+send"  #Sent box
+set postponed="+postponed"  #Draft box
+set sort=threads
 
-    # ================  SEND  ====================
-    set sendmail="/usr/bin/msmtp"           # 用 msmtp 发邮件
-    set realname = "xxxx"
-    set from = "xxxxxxxxx@xxxxxxxxx.com"
-    set use_from = yes
+# ================  SEND  ====================
+set sendmail="/usr/bin/msmtp"           # 用 msmtp 发邮件
 
-    # ================  Composition  ====================
-    set realname = "xxxxxxxxx"
-    set use_from = yes
-    set editor = vim
-    set edit_headers = yes  # See the headers when editing
-    set charset = UTF-8     # value of $LANG; also fallback for send_charset
-    # Sender, email address, and sign-off line must match
-    unset use_domain        # because joe@localhost is just embarrassing
-    set envelope_from=yes
-    set move=yes    #移动已读邮件
-    set include #回复的时候调用原文
-    macro index,pager I '<shell-escape> fetchmail -vk<enter>'
+# ================  Composition  ====================
+set realname = "Weikang Guo"
+set from = "xxxxx@gmail.com"
+set use_from = yes
+set editor = vim
+set edit_headers = yes  # See the headers when editing
+set charset = UTF-8     # value of $LANG; also fallback for send_charset
+# Sender, email address, and sign-off line must match
+unset use_domain        # because joe@localhost is just embarrassing
+set envelope_from=yes
+set move=yes    #移动已读邮件
+set include #回复的时候调用原文
+macro index,pager I '<shell-escape> fetchmail -vk<enter>'
+
+macro index <F1> "<change-folder>inbox<enter>" "Go to Inbox"
+macro index <F2> "<change-folder>r4l<enter>" "Go to Rust For Linux"
+macro index <F3> "<change-folder>linux_trace_kernel<enter>" "Go to Linux Trace Kernel"
+
+
 ```
 
 ### 测试基本功能
@@ -264,7 +300,7 @@ $ git commit -s
 
 内容格式如下:
 
-!()[./images/env/4.png]
+![./images/env/4.png](../images/env/4.png)
 
 制作检查本地补丁:
 
@@ -282,7 +318,7 @@ $ git commit -s
     $./scripts/get_maintainer.pl  0001-debugobjects-add-pr_warn.patch  --获取邮件接收人
 ```
 
-!()[./images/env/5.png]
+![./images/env/5.png](../images/env/5.png)
 
 前面的是需要主送的，open是需要抄送的，
 
@@ -296,7 +332,7 @@ $ git commit -s
 
 mutt 应该可以收到邮件，我们假设我们是 maintainer， 对邮件进行回复，提出意见
 
-!()[./images/env/6.png]
+![./images/env/6.png](../images/env/6.png)
 
 #### 参考
 

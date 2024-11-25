@@ -24,9 +24,10 @@ markdown_extensions:
 
 nav:
   - 前言: 
-    - '介绍': 'index.md'
-    - '知识图谱': 'study_map.md'
-    - '内核开发准备': 'linux_tools_install.md'
+    - '导航': 'index.md'
+    - '社区版本': 'intro/version.md'
+    - '编码守则': 'intro/version.md'
+    - '开发环境': 'intro/linux_tools_install.md'
   - 内核初探:
     - '启动过程': 'init/start.md'
   - 基础机制:
