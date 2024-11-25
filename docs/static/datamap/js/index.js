@@ -64,13 +64,14 @@ $(function(){
 	//visgraph.switchAnimate(true);//开启动画模式
 	visgraph.setShowDetailScale(0.1);//显示详细
 	
-	//数据
-
+	//数据 
+	// 叶子节点 大小： 19  依次增加5
 	var demoData =  {
 		"nodes":[
 			{
 				"id":1,
 				"label":"前置知识点",
+				"type": "fake"
 				"x":-1049,
 				"y":2447,
 				"size":39,
@@ -80,11 +81,13 @@ $(function(){
 			{
 				"id":2,
 				"label":"版本介绍",
+				"type": "content"
 				"x":-655,
 				"y":2163,
-				"size":39,
+				"size":19,
 				"scale":"3.8",
 				"color":"rgb(120,233,133)"
+				"properties": "https://linux-book.readthedocs.io/en/latest/intro/version/"
 			},
 		],
 		"links":[
@@ -92,10 +95,6 @@ $(function(){
 				"source":1,
 				"target":2
 			},
-			{
-				"source":21,
-				"target":20
-			}
 		]
 	};
 		
@@ -103,7 +102,16 @@ $(function(){
 	visgraph.drawData(demoData);
 	visgraph.setZoom('auto');
 	
-	
+    //获取图可视化元素中所有的节点 显示标签并且绑定双击事件
+	var nodes = visGraph.nodes;
+	nodes.map(function(node){
+		if(node.type == 'content'){
+			node.showlabel = true;
+			node.dbclick(function(event){
+				 window.open(node.properties, '_blank'); // 在新标签页中打开链接
+			});
+		}
+	});
 	
 	//下拉联想选择
 	var labelDatas = demoData.nodes.map((node)=>{
@@ -140,7 +148,6 @@ $(function(){
 		link.colorType='both';
 		//link.colorType='defined';
 		//link.strokeColor='100,200,100';
-		
 		if(link.source.id == 10){
 			link.lineWidth=40;
 		}
