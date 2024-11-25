@@ -5,7 +5,7 @@ theme:
   icon:
     admonition:
         <type>: <icon>
-        
+         
 plugins:
   - search
   - mkdocstrings:
@@ -24,7 +24,7 @@ markdown_extensions:
 
 nav:
   - 前言: 
-    - '基本介绍': 'index.md'
+    - '介绍': 'index.md'
     - '知识图谱': 'study_map.md'
     - '内核开发准备': 'linux_tools_install.md'
   - 内核初探:
