@@ -18,8 +18,8 @@
 ## 知识图谱
 
 <div class="blocks">
-  <a href="index.md#内核版本" class="block">基本介绍 测试1 </a>
-  <a href="foundation/sysfs.md#引用计数" class="block">引用计数 测试2</a>
+  <a href="index.html#内核版本" class="block">基本介绍 测试1 </a>
+  <a href="foundation/sysfs.html#引用计数" class="block">引用计数 测试2</a>
 </div>
 
 ## 内核版本
