@@ -1,0 +1,27 @@
+.blocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.block {
+  display: block;
+  padding: 15px 20px;
+  background-color: #f2f2f2;
+  border-radius: 8px;
+  text-align: center;
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.block:hover {
+  background-color: #ffdd57;
+  transform: scale(1.1);
+}
+
+.block:active {
+  background-color: #ffc107;
+}

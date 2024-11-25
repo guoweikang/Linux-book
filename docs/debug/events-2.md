@@ -16,9 +16,9 @@
 
 #### Trace Event 介绍
 
-我们在`trace`系列中，其实已经见过一些基于`ftrace`实现的`tracer` ， 比如`stack tracer` 
+我们需要辩证的看
 
-`ftrace tracer`我认为的定义是是基于 `ftrace` 实现了固定 `probe handler` 的
+我们在`trace`系列中，其实已经见过一些基于`ftrace`实现的`tracer` ， 比如`stack tracer` 
 
 `Event Trace`为不同`trace`事件提供
 

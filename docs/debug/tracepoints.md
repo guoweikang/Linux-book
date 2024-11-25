@@ -428,5 +428,3 @@ tracepoint_probe_register_prio(struct tracepoint *tp, void *probe, void *data, i
 本章节，我们讲了`tracepoint`定义以及用到的核心优化机制`static key`  
 
 - 在`if else` branch miss 严重的场景，我们可以通过利用`likely/unlikely`利用流水线缓冲实现更优先的指令预载，在`if条件`更加稳定的场景（比如动态开关），可以使用`static key`机制 
-
-- `tracepoints` 是 `Event Trace`   的底层机制

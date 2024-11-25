@@ -4,13 +4,9 @@
 
 ### 介绍
 
-
-
 我们用了几节，讲了关于`dyn ftrace`的大部分核心细节。
 
 本节，我们会介绍另外一个探测实现技术 `kprobe`. 不同于`ftrace` 只可以给函数的开始和结束增加探测点，`kprobe`允许在内核的任何(除黑名单之外的)代码段增加探测点
-
-
 
 接下来的四个小节将解释不同类型的探测器是如何工作的，以及跳转优化是如何进行的。 为了更好地使用 `Kprobes`，这些小节还解释了一些您需要了解的内容，例如 `pre_handler `和 `post_handler` 之间的区别，以及如何使用` kretprobe` 的 `maxactive` 和` nmissed` 字段。
 
@@ -44,13 +40,13 @@
 
 ![](./image/kprobe-2.png)
 
-### 使用方法
+### Kprobe API
 
 参考`samples/kprobe.c`
 
-#### kprobe
+#### struct kprobe
 
-首先需要准备一个`struct kprobe`
+首先需要准备一个``
 
 设置`kprobe.symbol_name` 为打断点的位置  如果知道地址 也可以直接设置`kprobe.addr` ,两个里面只可以选择一个方法；
 
@@ -86,7 +82,18 @@
  }
 ```
 
-执行注册
+初始化结构体 填充回调函数
+
+```c
+          kp.pre_handler = handler_pre;
+          kp.post_handler = handler_post;
+```
+
+
+
+#### （un）register_kprobe
+
+注册kprobe
 
 ```c
   static int __init kprobe_init(void)
@@ -104,7 +111,13 @@
   }
 ```
 
-#### kretprobe
+### enable(disable)__kprobe
+
+和注册类似，不同在于不会申请和销毁`kprobe`相关资源 只是取消回调
+
+
+
+### Kretprobe API
 
 `kretprobe`的概念和`fprobe`非常类似，具体使用方法参考`sample/kreprobe_example.c`
 

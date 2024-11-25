@@ -15,6 +15,13 @@
 - Linux开发环境
 - Linux开发指导
 
+## 知识图谱
+
+<div class="blocks">
+  <a href="index.md#内核版本" class="block">基本介绍 测试1 </a>
+  <a href="foundation/sysfs.md#引用计数" class="block">引用计数 测试2</a>
+</div>
+
 ## 内核版本
 
 本节过后，应该清楚

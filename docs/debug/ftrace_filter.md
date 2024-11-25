@@ -154,11 +154,11 @@ trace_create_file("stack_trace_filter", TRACE_MODE_WRITE, NULL,
 
 由于`function tracer` 会涉及到我们还没有讲到的内容，这里我们主要以 `stack_trace_filter` 分析, 在创建该文件时，会传入
 
-- trace_ops: 过滤针对的`ftrace ops` 
+- trace_ops: 对应的`ftrace ops` 
 
 - `stack_trace_filter_fops`：文件操作回调
 
-重点分析 `<u>stack_trace_filter_fops</u>`: 
+重点分析 `stack_trace_filter_fops`: 
 
 ```c
 static const struct file_operations stack_trace_filter_fops = {
@@ -181,14 +181,14 @@ ftrace_filter_write
     -> ftrace_match_records() 
 ```
 
-`ftrace_match_records`：参考 之前的`ftrace_set_filter ` 实现
+`ftrace_match_records`：参考之前的`ftrace_set_filter ` 实现
 
 ```c
 ftrace_regex_release 
  -> ftrace_hash_move_and_update_ops()
 ```
 
-`ftrace_hash_move_and_update_ops`： 参考 之前的`ftrace_set_filter` 实现
+`ftrace_hash_move_and_update_ops`： 参考之前的`ftrace_set_filter` 实现
 
 可以看到，此逻辑下，过程和`ftrace_set_filter` 类似
 
@@ -303,8 +303,6 @@ ftrace_mod_callback(tr, hash,func_orig,cmd, module, enable)
 - iter->hash : 会把匹配到的`record entry` 塞进去 
 - 会把匹配啊到的`frace_mod_load` 放到`tr->mod_trace`
 
-
-
 第一个，就和`filter`一样，在` ftrace_regex_release` 文件关闭时，会更新插桩点；
 
 第二个，是因为可能有module当前未加载，需要保存下过滤信息，在moudle加载的时候过滤插桩，具体流程在下面代码中
@@ -321,5 +319,3 @@ ftrace_module_enable(mod)
 ```
 
 其他`command`过程我们暂时先不关注了
-
- 

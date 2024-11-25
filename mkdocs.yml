@@ -5,6 +5,7 @@ theme:
   icon:
     admonition:
         <type>: <icon>
+  custom_dir: docs/static
         
 plugins:
   - search
@@ -26,6 +27,8 @@ nav:
   - 前言: 
     - '基本介绍': 'index.md'
     - '内核开发准备': 'linux_tools_install.md'
+  - 内核初探:
+    - '启动过程': 'init/start.md'
   - 基础机制:
     - '并发同步': 'foundation/lock.md'
     - 'sysfs': 'foundation/sysfs.md'
@@ -49,14 +52,18 @@ nav:
     - 'log': 'debug/log.md'
     - 'gdb': 'debug/gdb.md'
   - Trace 系列: 
-    - 'ftrace-0:入门指导': 'debug/ftrace.md'
-    - 'ftrace-1:动态设计实现': 'debug/ftrace-design.md'
-    - 'ftrace-2:stack trace设计实现': 'debug/stack_trace.md'
-    - 'ftrace-3:fprobe设计实现': 'debug/fprobe.md'
+    - '新手初窥': 'debug/first_look.md'
+    - 'ftrace-1:dynmaic ftrace': 'debug/ftrace-design.md'
+    - 'ftrace-2:stack trace': 'debug/stack_trace.md'
+    - 'ftrace-3:fprobe': 'debug/fprobe.md'
     - 'ftrace-4:filter/command': 'debug/ftrace_filter.md'
-    - 'kprobe:设计实现': 'debug/kprobe.md'
-    - 'tracepoints:设计实现': 'debug/tracepoints.md'
-    - 'trace-6:Event Trace设计实现': 'debug/events.md'
+    - 'kprobe': 'debug/kprobe.md'
+    - 'uprobe': 'debug/uprobe.md'
+    - 'tracepoints': 'debug/tracepoints.md'
+    - '基础设施：tracefs': 'debug/tracefs.md'
+    - 'Event-Trace-1: event print': 'debug/events_print.md'
     - 'trace-7:kprobe-events': 'debug/kprobe-events.md'
     - 'ftrace-tools': 'debug/ftrace_tools.md'
     - 'debug_objects': 'debug/debug_objects.md'
+  - 经验总结: 
+    - '启动时间优化': 'experience/start.md'
