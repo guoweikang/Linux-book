@@ -65,29 +65,70 @@ $(function(){
 	visgraph.setShowDetailScale(0.1);//显示详细
 	
 	//数据 
-	// 叶子节点 大小： 19  依次增加5
+	// 叶子节点 大小： 20  依次增加0.5倍大小
 	var demoData =  {
 		"nodes":[
 			{
 				"id":1,
 				"label":"前置知识点",
-				"type": "fake"
-				"x":-1049,
-				"y":2447,
-				"size":39,
-				"scale":"1.8",
+				"type": "fake",
+				"size":40,
 				"color":"rgb(120,233,133)"
 			},
 			{
 				"id":2,
 				"label":"版本介绍",
-				"type": "content"
-				"x":-655,
-				"y":2163,
-				"size":19,
-				"scale":"3.8",
-				"color":"rgb(120,233,133)"
+				"type": "content",
+				"size":20,
+				"color":"rgb(120,233,133)",
 				"properties": "https://linux-book.readthedocs.io/en/latest/intro/version/"
+			},
+			
+			{
+				"id":3,
+				"label":"编码规范",
+				"type": "content",
+				"size":20,
+				"color":"rgb(120,233,133)",
+				"properties": "https://linux-book.readthedocs.io/en/latest/intro/code/"
+			},
+			{
+				"id":4,
+				"label":"环境配置",
+				"type": "content",
+				"size":20,
+				"color":"rgb(120,233,133)",
+				"properties": "https://linux-book.readthedocs.io/en/latest/intro/linux_tools_install/"
+			},
+			{
+				"id":5,
+				"label":"gdb调试QEMU",
+				"type": "content",
+				"size":20,
+				"color":"rgb(120,233,133)",
+				"properties": "https://linux-book.readthedocs.io/en/latest/intro/gdb/"
+			},
+			{
+				"id":6,
+				"label":"基础机制",
+				"size":40,
+				"color":"rgb(102,255,255)",
+			},
+			{
+				"id":7,
+				"label":"refcnt",
+				"type": "content",
+				"size":20,
+				"color":"rgb(102,255,255)",
+				"properties": "https://linux-book.readthedocs.io/en/latest/foundation/refcnt"
+			},
+			{
+				"id":8,
+				"label":"kref",
+				"size":20,
+				"type": "content",
+				"color":"rgb(102,255,255)",
+				"properties": "https://linux-book.readthedocs.io/en/latest/foundation/kref"
 			},
 		],
 		"links":[
@@ -95,18 +136,53 @@ $(function(){
 				"source":1,
 				"target":2
 			},
+			{
+				"source":1,
+				"target":3
+			},
+			{
+				"source":1,
+				"target":4
+			},
+			{
+				"source":1,
+				"target":5
+			},
+			{
+				"source":6,
+				"target":7
+			},
+			{
+				"source":6,
+				"target":8
+			},
 		]
 	};
-		
+	
+	//选择布局算法类型
+	var layoutType='kk';
+
+	//创建布局算法
+	var layout = new LayoutFactory(demoData).createLayout(layoutType);
+
+	//初始化布局算法参数或者重设布局参数
+	layout.initAlgo();
+	
+
+    //执行300次布局算法，一次性将图的布局效果完成
+	let i=0;
+	while(i++ < 300){
+		layout.runLayout(); //执行布局算法
+	}
 
 	visgraph.drawData(demoData);
 	visgraph.setZoom('auto');
 	
     //获取图可视化元素中所有的节点 显示标签并且绑定双击事件
-	var nodes = visGraph.nodes;
+	var nodes = visgraph.nodes;
 	nodes.map(function(node){
 		if(node.type == 'content'){
-			node.showlabel = true;
+			node.showShadow = true;	
 			node.dbclick(function(event){
 				 window.open(node.properties, '_blank'); // 在新标签页中打开链接
 			});
@@ -119,47 +195,12 @@ $(function(){
 	});
 	initAutoSelect(labelDatas);
 	
-	visgraph.nodes.forEach((node)=>{
-		//node.wrapText = true;
-		if(node.id == 10){
-			node.width = node.height = 300;
-			node.font='bold 60px KaiTi';
-			node.wrapText = true;
-			node.drawNode=drawSpacialNode;
-			
-		}else if(node.id < 1000){
-			node.width = node.height =200;
-			node.font='bold 40px KaiTi';
-			//node.fontColor='30,30,30';
-			node.wrapText = true;
-			node.drawNode=drawSpacialNode;
-		}else if(node.id>1000 && node.id<10000){
-			//node.setImage('img/icon/home.png');
-			node.width = node.height =120;
-		}else{
-			//node.setImage('img/icon/table.png');
-			node.width = node.height = 80;
-		}	
-	});
-	
-	visgraph.links.forEach((link)=>{
-		link.lineWidth = 16;
-		link.lineType='arrowline';
-		link.colorType='both';
-		//link.colorType='defined';
-		//link.strokeColor='100,200,100';
-		if(link.source.id == 10){
-			link.lineWidth=40;
-		}
-	});
-	
 	visgraph.refresh();
 	
 	//查找节点
 	function findNode(node){
 		visgraph.scene.addToSelected(node);
 		visgraph.focusTargetEle(node);
-		//visgraph.moveNodeToCenter(node,800);
 	}
 	
 	$('#searchEventBtn').click(function(){
@@ -185,7 +226,12 @@ $(function(){
 		});
 	}
 	
-	//画特殊节点
+	visgraph.nodes.forEach((node)=>{
+	if(node.type == 'content'){
+			node.drawNode=drawSpacialNode;
+		}
+	});
+ //画特殊节点
 	function drawSpacialNode(ctx){
 		var radius = this.radius;
 		this.animate = this.animate>100?20:this.animate;

@@ -92,8 +92,6 @@ defaults
  from xxxxx@gmail.com
  user xxxx@gmail.com
  password xxx
-
- 
 ```
 
 ### 配置收件箱
@@ -116,7 +114,6 @@ Fetchmail是一个非常简单的收件程序，而且是前台运行、一次�
 参考配置: 
 
 ```
-
     poll imap.gmail.com
     with proto IMAP
     user "xxxx@gmail.com"
@@ -124,7 +121,6 @@ Fetchmail是一个非常简单的收件程序，而且是前台运行、一次�
     mda "/usr/bin/maildrop" 
     options
     ssl
-
 ```
 
 fetchmail只负责收取，不负责“下载”部分，你找不到邮件存在哪了。, 需要配置MDA分类器，如maildrop，才能看到下载后的邮件。
@@ -202,7 +198,6 @@ if (/^To:.*linux-trace-kernel@vger\.kernel\.org/)
 {
     to $LINUX_TRACE_KERNEL
 }
-
 ```
 
 ```
@@ -260,8 +255,6 @@ macro index,pager I '<shell-escape> fetchmail -vk<enter>'
 macro index <F1> "<change-folder>inbox<enter>" "Go to Inbox"
 macro index <F2> "<change-folder>r4l<enter>" "Go to Rust For Linux"
 macro index <F3> "<change-folder>linux_trace_kernel<enter>" "Go to Linux Trace Kernel"
-
-
 ```
 
 ### 测试基本功能
