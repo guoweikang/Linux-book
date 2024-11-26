@@ -29,7 +29,15 @@
     </div>
     <script type="text/javascript">
         igraph.i18n.setLanguage("chs");
-        var app = new igraph.GraphNavigator(document.getElementById('graphArea'), 'LIGHT');
+		var app = new igraph.GraphNavigator(document.getElementById('graphArea'),{
+		groups: {
+           useSeqColors: false,
+           custom: {
+               introud: {color:'blue'},
+               base: {color:'green'}           
+			   }   
+			}
+		});
         app.loadGson("linux-book.json", {
             "onGetNodeDescription": function (node) {
                 console.log(node)
@@ -44,6 +52,9 @@
                 } else {
                     if (node.title !== undefined)
                         description += "<p align=left>" + node.title + "</p>";
+                }
+				if (node.url !== undefined) {
+                    description +=  "<a href='"  + node.url + "'>点击跳转：笔记地址 </a>";
                 }
 
                 return description;
