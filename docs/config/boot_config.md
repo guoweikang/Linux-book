@@ -8,7 +8,7 @@
     "depends": [
           "kernel start",
           "device tree",
-          "rootfs"    
+          "rootfs"
     ]
 }
 ```
