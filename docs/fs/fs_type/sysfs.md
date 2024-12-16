@@ -1,30 +1,5 @@
 ## sysfs
 
-### kref
-
-kref 是 linux kernel的引用计数的封装结构，实际上非常简单， 
-
-```
-    struct kref {
-        refcount_t refcount;
-    };
-```
-
-仅仅是一个原子变量的封装 kref 提供的API有
-
-```
-    kref_get(struct kref *kref);
-    kref_put(struct kref *kref, void (*release)(struct kref *kref))
-    kref_put_mutex(struct kref *kref,void (*release)(struct kref *kref),struct mutex *lock）
-    kref_put_lock(struct kref *kref,void (*release)(struct kref *kref),spinlock_t *lock))
-```
-
-- kref_get API很简单，只是对引用计数+1；
-- kref_put API很简单，只是对引用计数-1,同时判断引用计数 决定是否释放资源
-- kref_put_mutex/lock 和上面一样，只是释放资源的之前会先持锁
-
-## sysfs
-
 ### kobject
 
 让我们回到本节主题`sysfs`,是内核提供的一个内存文件系统, 每个文件节点都在内核以一个内存中的结构体存在;

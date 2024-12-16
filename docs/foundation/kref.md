@@ -1,4 +1,13 @@
-### ## Kref
+## Kref
+
+```json
+"node" {
+    "label": "kref",
+    "categories": ["foundation"],
+    "info": "kernel refcount",
+    "depends": ["refcount"]
+}
+```
 
 `kref` 是 linux `refcont`的引用计数的封装结构，实际上非常简单
 
@@ -75,20 +84,14 @@ static inline void kref_init(struct kref *kref)
           }
           return 0
   }
-  
+
   static inline int kref_put_lock(struct kref *kref,
                                    void (*release)(struct kref *kref),
                                    struct spinlock_t *lock);
-
-
 ```
-
-
 
 !!! Note:
 
     一般在`release callback`中实现需要上锁的部分，并解锁
-
-
 
 #### use sample

@@ -1,0 +1,630 @@
+{
+  "categories": {
+    "config": "config",
+    "log": "log",
+    "foundation": "foundation",
+    "fs": "fs",
+    "init": "init",
+    "lib": "lib",
+    "mem": "mem",
+    "test": "test"
+  },
+  "data": {
+    "nodes": [
+      {
+        "label": "boot config",
+        "categories": [
+          "config"
+        ],
+        "info": "kernel boot config",
+        "depends": [
+          "kernel start",
+          "device tree",
+          "rootfs"
+        ],
+        "id": 2,
+        "url": "https://linux-book.readthedocs.io/en/latest/./config/boot_config",
+        "file_path": ".\\config\\boot_config.md",
+        "value": 4
+      },
+      {
+        "label": "kernel param",
+        "categories": [
+          "config"
+        ],
+        "info": "kernel and module param",
+        "depends": [
+          "kernel start",
+          "boot config",
+          "initcall",
+          "kernel taint",
+          "kernel security",
+          "procfs",
+          "sysfs",
+          "kernel module"
+        ],
+        "id": 3,
+        "url": "https://linux-book.readthedocs.io/en/latest/./config/kernel_param",
+        "file_path": ".\\config\\kernel_param.md",
+        "value": 3
+      },
+      {
+        "label": "obsolate param",
+        "categories": [
+          "config"
+        ],
+        "info": "kernel obsolate param",
+        "depends": [
+          "kernel start",
+          "boot config"
+        ],
+        "id": 4,
+        "url": "https://linux-book.readthedocs.io/en/latest/./config/obsolate_param",
+        "file_path": ".\\config\\obsolate_param.md",
+        "value": 5
+      },
+      {
+        "label": "log",
+        "categories": [
+          "log"
+        ],
+        "info": "kernel log ",
+        "depends": [],
+        "id": 5,
+        "url": "https://linux-book.readthedocs.io/en/latest/./debug/log",
+        "file_path": ".\\debug\\log.md",
+        "value": 1
+      },
+      {
+        "label": "kref",
+        "categories": [
+          "foundation"
+        ],
+        "info": "kernel refcount",
+        "depends": [
+          "refcount"
+        ],
+        "id": 6,
+        "url": "https://linux-book.readthedocs.io/en/latest/./foundation/kref",
+        "file_path": ".\\foundation\\kref.md",
+        "value": 1
+      },
+      {
+        "label": "refcount",
+        "categories": [
+          "foundation"
+        ],
+        "info": "refcount",
+        "depends": [],
+        "id": 7,
+        "url": "https://linux-book.readthedocs.io/en/latest/./foundation/refcnt",
+        "file_path": ".\\foundation\\refcnt.md",
+        "value": 2
+      },
+      {
+        "label": "rw_sem",
+        "categories": [
+          "foundation"
+        ],
+        "info": "linux rw_semaphore ",
+        "depends": [
+          "lock_dep"
+        ],
+        "id": 8,
+        "url": "https://linux-book.readthedocs.io/en/latest/./foundation/rw_semaphore",
+        "file_path": ".\\foundation\\rw_semaphore.md",
+        "value": 1
+      },
+      {
+        "label": "dentry",
+        "categories": [
+          "fs"
+        ],
+        "info": "FileSystem dentry",
+        "depends": [
+          ""
+        ],
+        "id": 9,
+        "url": "https://linux-book.readthedocs.io/en/latest/./fs/core/dentry",
+        "file_path": ".\\fs\\core\\dentry.md",
+        "value": 1
+      },
+      {
+        "label": "super_block",
+        "categories": [
+          "fs"
+        ],
+        "info": "FileSystem super block",
+        "depends": [
+          "fs_context",
+          "rw_sem"
+        ],
+        "id": 10,
+        "url": "https://linux-book.readthedocs.io/en/latest/./fs/core/super_block",
+        "file_path": ".\\fs\\core\\super_block.md",
+        "value": 3
+      },
+      {
+        "label": "rootfs",
+        "categories": [
+          "fs"
+        ],
+        "info": "kernel root filesystem type",
+        "depends": [
+          "obsolate param",
+          "boot config",
+          "kernel start",
+          "memblock",
+          "initcall",
+          "schedule async",
+          "tmpfs",
+          "usermodehelper",
+          "ramfs"
+        ],
+        "id": 11,
+        "url": "https://linux-book.readthedocs.io/en/latest/./fs/fs_type/rootfs",
+        "file_path": ".\\fs\\fs_type\\rootfs.md",
+        "value": 6
+      },
+      {
+        "label": "tmpfs",
+        "categories": [
+          "fs"
+        ],
+        "info": "a shared mem file system",
+        "depends": [
+          "fs_type",
+          "fs_context"
+        ],
+        "id": 12,
+        "url": "https://linux-book.readthedocs.io/en/latest/./fs/fs_type/tmpfs",
+        "file_path": ".\\fs\\fs_type\\tmpfs.md",
+        "value": 3
+      },
+      {
+        "label": "fc_log",
+        "categories": [
+          "fs"
+        ],
+        "info": "fs context log",
+        "depends": [
+          "log",
+          "refcount",
+          "kalloc"
+        ],
+        "id": 13,
+        "url": "https://linux-book.readthedocs.io/en/latest/./fs/fs_type_frame/fc_log",
+        "file_path": ".\\fs\\fs_type_frame\\fc_log.md",
+        "value": 4
+      },
+      {
+        "label": "fs_context",
+        "categories": [
+          "fs"
+        ],
+        "info": "fs context",
+        "depends": [
+          "fs_type",
+          "fc_log"
+        ],
+        "id": 14,
+        "url": "https://linux-book.readthedocs.io/en/latest/./fs/fs_type_frame/fs_context",
+        "file_path": ".\\fs\\fs_type_frame\\fs_context.md",
+        "value": 7
+      },
+      {
+        "label": "fs_parser",
+        "categories": [
+          "fs"
+        ],
+        "info": "FileSystem config param parser",
+        "depends": [
+          "fc_log",
+          "fs_context"
+        ],
+        "id": 15,
+        "url": "https://linux-book.readthedocs.io/en/latest/./fs/fs_type_frame/fs_parser",
+        "file_path": ".\\fs\\fs_type_frame\\fs_parser.md",
+        "value": 3
+      },
+      {
+        "label": "fs_type",
+        "categories": [
+          "fs"
+        ],
+        "info": "FileSystem type",
+        "depends": [
+          "fs_context",
+          "super_block"
+        ],
+        "id": 16,
+        "url": "https://linux-book.readthedocs.io/en/latest/./fs/fs_type_frame/fs_type",
+        "file_path": ".\\fs\\fs_type_frame\\fs_type.md",
+        "value": 4
+      },
+      {
+        "label": "vfs mount",
+        "categories": [
+          "fs"
+        ],
+        "info": "filesystem mount",
+        "depends": [
+          "fs_type",
+          "fs_context"
+        ],
+        "id": 17,
+        "url": "https://linux-book.readthedocs.io/en/latest/./fs/vfs/vfs_mount",
+        "file_path": ".\\fs\\vfs\\vfs_mount.md",
+        "value": 2
+      },
+      {
+        "label": "vfs config",
+        "categories": [
+          "fs"
+        ],
+        "info": "filesystem config",
+        "depends": [
+          "fs_parser",
+          "fs_context"
+        ],
+        "id": 18,
+        "url": "https://linux-book.readthedocs.io/en/latest/./fs/vfs/vfs_mount_config",
+        "file_path": ".\\fs\\vfs\\vfs_mount_config.md",
+        "value": 2
+      },
+      {
+        "label": "initcall",
+        "categories": [
+          "init"
+        ],
+        "info": "kernel initcall",
+        "depends": [
+          "kernel start"
+        ],
+        "id": 19,
+        "url": "https://linux-book.readthedocs.io/en/latest/./init/initcall",
+        "file_path": ".\\init\\initcall.md",
+        "value": 3
+      },
+      {
+        "label": "kernel start",
+        "categories": [
+          "init"
+        ],
+        "info": "kernel start process",
+        "depends": [],
+        "id": 20,
+        "url": "https://linux-book.readthedocs.io/en/latest/./init/start",
+        "file_path": ".\\init\\start.md",
+        "value": 5
+      },
+      {
+        "label": "decompress",
+        "categories": [
+          "lib"
+        ],
+        "info": "kernel decompress tool",
+        "depends": [],
+        "id": 21,
+        "url": "https://linux-book.readthedocs.io/en/latest/./lib/decompress",
+        "file_path": ".\\lib\\decompress.md",
+        "value": 1
+      },
+      {
+        "label": "mem_intro",
+        "categories": [
+          "mem"
+        ],
+        "info": "mem basic concepts",
+        "depends": [],
+        "id": 22,
+        "url": "https://linux-book.readthedocs.io/en/latest/./mem/index",
+        "file_path": ".\\mem\\index.md",
+        "value": 1
+      },
+      {
+        "label": "mem_to_page",
+        "categories": [
+          "mem"
+        ],
+        "info": "mem page pfn mapping",
+        "depends": [],
+        "id": 23,
+        "url": "https://linux-book.readthedocs.io/en/latest/./mem/physical",
+        "file_path": ".\\mem\\physical.md",
+        "value": 1
+      },
+      {
+        "label": "page_manager",
+        "categories": [
+          "mem"
+        ],
+        "info": "page manager",
+        "depends": [],
+        "id": 24,
+        "url": "https://linux-book.readthedocs.io/en/latest/./mem/physical2",
+        "file_path": ".\\mem\\physical2.md",
+        "value": 1
+      },
+      {
+        "label": "fixmap",
+        "categories": [
+          "mem"
+        ],
+        "info": "kernel fix map",
+        "depends": [
+          "obsolate param"
+        ],
+        "id": 25,
+        "url": "https://linux-book.readthedocs.io/en/latest/./mem/early_init/fixmap",
+        "file_path": ".\\mem\\early_init\\fixmap.md",
+        "value": 2
+      },
+      {
+        "label": "kernel_map",
+        "categories": [
+          "mem"
+        ],
+        "info": "kernel mem map init",
+        "depends": [],
+        "id": 26,
+        "url": "https://linux-book.readthedocs.io/en/latest/./mem/early_init/kernel_map",
+        "file_path": ".\\mem\\early_init\\kernel_map.md",
+        "value": 1
+      },
+      {
+        "label": "kernel_line_map",
+        "categories": [
+          "mem"
+        ],
+        "info": "kernel line mem map",
+        "depends": [
+          "memblock"
+        ],
+        "id": 27,
+        "url": "https://linux-book.readthedocs.io/en/latest/./mem/early_init/line_map",
+        "file_path": ".\\mem\\early_init\\line_map.md",
+        "value": 1
+      },
+      {
+        "label": "memblock",
+        "categories": [
+          "mem"
+        ],
+        "info": "memblock manage",
+        "depends": [
+          "obsolate param",
+          "fixmap"
+        ],
+        "id": 28,
+        "url": "https://linux-book.readthedocs.io/en/latest/./mem/early_init/memblock",
+        "file_path": ".\\mem\\early_init\\memblock.md",
+        "value": 4
+      },
+      {
+        "label": "kunit",
+        "categories": [
+          "test"
+        ],
+        "info": "kernel unit test",
+        "depends": [],
+        "id": 29,
+        "url": "https://linux-book.readthedocs.io/en/latest/./test/kunit",
+        "file_path": ".\\test\\kunit.md",
+        "value": 1
+      }
+    ],
+    "edges": [
+      {
+        "id": 1,
+        "label": "depend",
+        "from": 2,
+        "to": 20
+      },
+      {
+        "id": 2,
+        "label": "depend",
+        "from": 2,
+        "to": 11
+      },
+      {
+        "id": 3,
+        "label": "depend",
+        "from": 3,
+        "to": 20
+      },
+      {
+        "id": 4,
+        "label": "depend",
+        "from": 3,
+        "to": 2
+      },
+      {
+        "id": 5,
+        "label": "depend",
+        "from": 3,
+        "to": 19
+      },
+      {
+        "id": 6,
+        "label": "depend",
+        "from": 4,
+        "to": 20
+      },
+      {
+        "id": 7,
+        "label": "depend",
+        "from": 4,
+        "to": 2
+      },
+      {
+        "id": 8,
+        "label": "depend",
+        "from": 6,
+        "to": 7
+      },
+      {
+        "id": 9,
+        "label": "depend",
+        "from": 10,
+        "to": 14
+      },
+      {
+        "id": 10,
+        "label": "depend",
+        "from": 10,
+        "to": 8
+      },
+      {
+        "id": 11,
+        "label": "depend",
+        "from": 11,
+        "to": 4
+      },
+      {
+        "id": 12,
+        "label": "depend",
+        "from": 11,
+        "to": 2
+      },
+      {
+        "id": 13,
+        "label": "depend",
+        "from": 11,
+        "to": 20
+      },
+      {
+        "id": 14,
+        "label": "depend",
+        "from": 11,
+        "to": 28
+      },
+      {
+        "id": 15,
+        "label": "depend",
+        "from": 11,
+        "to": 19
+      },
+      {
+        "id": 16,
+        "label": "depend",
+        "from": 11,
+        "to": 12
+      },
+      {
+        "id": 17,
+        "label": "depend",
+        "from": 12,
+        "to": 16
+      },
+      {
+        "id": 18,
+        "label": "depend",
+        "from": 12,
+        "to": 14
+      },
+      {
+        "id": 19,
+        "label": "depend",
+        "from": 13,
+        "to": 5
+      },
+      {
+        "id": 20,
+        "label": "depend",
+        "from": 13,
+        "to": 7
+      },
+      {
+        "id": 21,
+        "label": "depend",
+        "from": 14,
+        "to": 16
+      },
+      {
+        "id": 22,
+        "label": "depend",
+        "from": 14,
+        "to": 13
+      },
+      {
+        "id": 23,
+        "label": "depend",
+        "from": 15,
+        "to": 13
+      },
+      {
+        "id": 24,
+        "label": "depend",
+        "from": 15,
+        "to": 14
+      },
+      {
+        "id": 25,
+        "label": "depend",
+        "from": 16,
+        "to": 14
+      },
+      {
+        "id": 26,
+        "label": "depend",
+        "from": 16,
+        "to": 10
+      },
+      {
+        "id": 27,
+        "label": "depend",
+        "from": 17,
+        "to": 16
+      },
+      {
+        "id": 28,
+        "label": "depend",
+        "from": 17,
+        "to": 14
+      },
+      {
+        "id": 29,
+        "label": "depend",
+        "from": 18,
+        "to": 15
+      },
+      {
+        "id": 30,
+        "label": "depend",
+        "from": 18,
+        "to": 14
+      },
+      {
+        "id": 31,
+        "label": "depend",
+        "from": 19,
+        "to": 20
+      },
+      {
+        "id": 32,
+        "label": "depend",
+        "from": 25,
+        "to": 4
+      },
+      {
+        "id": 33,
+        "label": "depend",
+        "from": 27,
+        "to": 28
+      },
+      {
+        "id": 34,
+        "label": "depend",
+        "from": 28,
+        "to": 4
+      },
+      {
+        "id": 35,
+        "label": "depend",
+        "from": 28,
+        "to": 25
+      }
+    ]
+  }
+}

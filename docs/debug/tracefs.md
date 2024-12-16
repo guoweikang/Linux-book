@@ -48,7 +48,6 @@
    // 放入workqueue 延后初始化
    -> INIT_WORK(&tracerfs_init_work, tracer_init_tracefs_work_func);
    -> queue_work(eval_map_wq, &tracerfs_init_work);
-     
 ```
 
 - trace_array: 暂时不关注，但是很重要，是trace 的顶层结构体
@@ -56,8 +55,6 @@
 - global_trace： tracing 中最顶层 的结构体
 
 - 可以看到： `tracing`顶层目录 属于 global_trace 
-  
-  
 
 ```c
 tracer_init_tracefs_work_func() 

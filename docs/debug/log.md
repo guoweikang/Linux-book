@@ -1,5 +1,14 @@
 ## 日志系统
 
+```json
+"node" {
+    "label": "log",
+    "categories": ["log"],
+    "info": "kernel log ",
+    "depends": []
+}
+```
+
 ### 日志等级
 
 内核内部定义了如下的日志等级 数字越小，表示等级越高

@@ -1,5 +1,14 @@
 ## 引用计数
 
+```json
+"node" {
+    "label": "refcount",
+    "categories": ["foundation"],
+    "info": "refcount",
+    "depends": []
+}
+```
+
 首先必须要先解释一下引用计数：`refcnt`, 这是编程模型常用的一个概念，引用计数主要使用在这个场景之下:
 
 A模块管理着一个内部对象(object), 该对象的申请肯定是A模块去管理的，更加具体一点，比如创建一个线程，

@@ -29,23 +29,41 @@ nav:
     - '编码守则': 'intro/code.md'
     - '环境配置': 'intro/linux_tools_install.md'
     - 'gdb调试qemu': 'intro/gdb.md'
-  - 内核初探:
-    - '启动过程': 'init/start.md'
+  - 内核启动分析:
+    - '启动流程': 'init/start.md'
+    - 'initcall': 'init/initcall.md'
+  - 内核配置:
+    - 'obsolate Param': 'config/obsolate_param.md'
+    - 'Kernel&Module Param': 'config/kernel_param.md'
+    - 'bootconfig': 'config/boot_config.md'
   - 基础机制:
     - 'refcont': 'foundation/refcnt.md'
     - 'kref': 'foundation/kref.md'
     - '并发同步': 'foundation/lock.md'
-  - 文件系统:
-    - 'sysfs': 'fs/sysfs.md'    
-    - 'nvme': 'fs/nvme.md'
-  - 内存子系统: 
-    - '简介': 'mem/index.md'
-    - '内存初始化': 'mem/init.md'
-    - '物理内存管理': 'mem/physical.md'
+    - '读写睡眠锁': 'foundation/rw_semaphore.md'
+   - 内存子系统: 
+    - '基础知识': 'mem/index.md'
+    - 'arm64:内核镜像内存访问': 'mem/early_init/kernel_map.md'
+    - 'arm64:fixmap内存': 'mem/early_init/fixmap.md'
+    - '早期内存管理机制：memblock': 'mem/early_init/memblock.md'
+    - 'arm64:线性内存区': mem/early_init/line_map.md'
+
+    - '前期初始化2:mmu模块': 'mem/early_init/mmu.md'
+
+    - '物理内存管理1: pfn to page': 'mem/physical.md'
+    - '物理内存管理2: pfn映射': 'mem/physical2.md'
+    
     - '物理内存规整': 'mem/compacation.md'
     - '物理内存回收': 'mem/compacation.md'
     - '调试': 'mem/debug.md'
     - '官网翻译': 'mem/doc.md'
+  - 文件系统:
+    - 'fs type': 'fs/fs_type_frame/fs_type.md'
+    - 'fs context': 'fs/fs_type_frame/fs_context.md'
+    - 'vfsconfig-1: fs parser': 'fs/fs_type_frame/fs_parser.md'
+    - 'vfsconfig-2: syscall fsconfig': 'fs/vfs/vfs_config.md'
+    - 'sysfs': 'fs/sysfs.md'    
+    - 'nvme': 'fs/nvme.md'
   - 驱动子系统:
     - 'dts': 'driver/dts.md'
     - 'clk': 'driver/clk.md'

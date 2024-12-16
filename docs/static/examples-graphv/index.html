@@ -29,16 +29,26 @@
     </div>
     <script type="text/javascript">
         igraph.i18n.setLanguage("chs");
+        var app = new igraph.GraphNavigator(document.getElementById('graphArea'), 'LIGHT');
+
 		var app = new igraph.GraphNavigator(document.getElementById('graphArea'),{
 		groups: {
-           useSeqColors: false,
-           custom: {
-               introud: {color:'blue'},
-               base: {color:'green'}           
-			   }   
+			useSeqColors: false,
+			custom: {
+					config: {color:'green'},
+					foundation: {color:'green'},
+					log: {color:'green'},
+					lib: {color:'green'},
+					test: {color:'green'},
+					init: {color:'purple'},
+					fs: {color:'red'},
+					mem: {color:'blue'}
+
+				}   
 			}
 		});
-        app.loadGson("linux-book.json", {
+		
+        app.loadGson("linux-book_update.json", {
             "onGetNodeDescription": function (node) {
                 console.log(node)
                 var description = "<p align=center>";
@@ -47,6 +57,7 @@
                 }
                 description += "<b>" + node.label + "</b>" + "[" + node.id + "]";
                 description += "</p>";
+                description += "<p align=left> value: " + node.value + "</p>";
                 if (node.info !== undefined) {
                     description += "<p align=left>" + node.info + "</p>";
                 } else {

@@ -20,13 +20,11 @@
 - Shared Memory Filesystem(未完成)
 - Out Of Memory Handling(未完成)
 
-
 ## Physical Memory
 
 Linux 可用于多种体系结构，因此需要一种**独立于体系结构**的抽象来表示物理内存。 
 
 本章描述用于管理正在运行的系统中的物理内存的结构
-
 
 内存管理中普遍存在的第一个主要概念是**非统一内存访问**`NUMA`。 
 
@@ -44,33 +42,30 @@ Linux 可用于多种体系结构，因此需要一种**独立于体系结构**�
 
 对于 UMA 架构，仅使用一个名为 `contig_page_data` 的静态 pg_data_t 结构。 `NODE`将在`node section`进一步讨论
 
-
 整个物理地址空间被划分为一个或多个称为`ZONE`的块，它们代表内存中的**不同范围**。 
 这些范围通常由访问物理内存的体系结构约束决定。 
 
 `Node`内对应于特定`Zone`的内存范围由 `struct zone` 描述，类型定义为 `zone_t`。 每个区域都有下述类型之一。
 
-
- - `ZONE_DMA` 和 `ZONE_DMA32`:  历史上表示适合无法访问所有可寻址内存的外围设备进行 DMA 的内存。
-    多年来，有更好、更强大的接口来获取具有 DMA 特定要求的内存（使用通用设备的动态DMA映射），
-	但` ZONE_DMA `和 `ZONE_DMA32 `仍然表示对其访问方式有限制的内存范围。 
-	根据体系结构，可以使用 `CONFIG_ZONE_DMA` 和 `CONFIG_ZONE_DMA32` 配置选项在构建时禁用这些区域类型中的任何一种，
-	甚至它们都可以禁用。 某些 64 位平台可能需要两个区域，因为它们支持具有不同 DMA 寻址限制的外设。
- - `ZONE_NORMAL `: 用于内核始终可以访问的普通内存。 如果DMA设备支持传输到所有可寻址内存，
-    则可以在此区域中的页面上执行 DMA操作。 `ZONE_NORMAL `始终启用。
- - `ZONE_HIGHMEM`:  是物理内存中未被内核页表中的永久映射覆盖的部分。 
-    该区域中的内存只能由内核使用临时映射来访问。 该区域仅在某些 32 位体系结构上可用，并通过 `CONFIG_HIGHMEM` 启用。
- - `ZONE_MOVABLE`:  适用于普通可访问内存，就像` ZONE_NORMAL` 一样。 
-    不同之处在于ZONE_MOVABLE中的大多数页面的内容是可移动的。 
-	这意味着虽然这些页面的虚拟地址不会改变，但它们的内容可能会在不同的物理页面之间移动。
-	通常，`ZONE_MOVABLE `在内存热插拔期间填充，但也可能在启动时使用 `kernelcore`、`movablecore` 和 `moving_node` 
-	内核命令行参数之一填充。 有关更多详细信息，请参阅页面迁移和内存热插拔。
+- `ZONE_DMA` 和 `ZONE_DMA32`:  历史上表示适合无法访问所有可寻址内存的外围设备进行 DMA 的内存。
+   多年来，有更好、更强大的接口来获取具有 DMA 特定要求的内存（使用通用设备的动态DMA映射），
+   但` ZONE_DMA `和 `ZONE_DMA32 `仍然表示对其访问方式有限制的内存范围。 
+   根据体系结构，可以使用 `CONFIG_ZONE_DMA` 和 `CONFIG_ZONE_DMA32` 配置选项在构建时禁用这些区域类型中的任何一种，
+   甚至它们都可以禁用。 某些 64 位平台可能需要两个区域，因为它们支持具有不同 DMA 寻址限制的外设。
+- `ZONE_NORMAL `: 用于内核始终可以访问的普通内存。 如果DMA设备支持传输到所有可寻址内存，
+   则可以在此区域中的页面上执行 DMA操作。 `ZONE_NORMAL `始终启用。
+- `ZONE_HIGHMEM`:  是物理内存中未被内核页表中的永久映射覆盖的部分。 
+   该区域中的内存只能由内核使用临时映射来访问。 该区域仅在某些 32 位体系结构上可用，并通过 `CONFIG_HIGHMEM` 启用。
+- `ZONE_MOVABLE`:  适用于普通可访问内存，就像` ZONE_NORMAL` 一样。 
+   不同之处在于ZONE_MOVABLE中的大多数页面的内容是可移动的。 
+   这意味着虽然这些页面的虚拟地址不会改变，但它们的内容可能会在不同的物理页面之间移动。
+   通常，`ZONE_MOVABLE `在内存热插拔期间填充，但也可能在启动时使用 `kernelcore`、`movablecore` 和 `moving_node` 
+   内核命令行参数之一填充。 有关更多详细信息，请参阅页面迁移和内存热插拔。
   - `ZONE_DEVICE`:  表示驻留在 `PMEM `和 `GPU` 等设备上的内存。 
-     它具有与 RAM 区域类型不同的特征，它的存在是为了为设备驱动程序识别的物理地址范围提供结构页和内存映射服务。
-     `ZONE_DEVICE `通过配置选项 CONFIG_ZONE_DEVICE 启用。
+    它具有与 RAM 区域类型不同的特征，它的存在是为了为设备驱动程序识别的物理地址范围提供结构页和内存映射服务。
+    `ZONE_DEVICE `通过配置选项 CONFIG_ZONE_DEVICE 启用。
 
 值得注意的是，许多内核操作只能使用 `ZONE_NORMAL` ，因此它是性能最关键的`Zone`。 `Zone`将在`Zone`章节中进一步讨论。
-
 
 节点和区域范围之间的关系由固件报告的物理内存映射、内存寻址的架构约束以及内核命令行中的某些参数确定。
 
@@ -107,6 +102,7 @@ Linux 可用于多种体系结构，因此需要一种**独立于体系结构**�
 
 `BANK`可以属于交错节点。 在下面的示例中，x86 机器在` 4 个BANK`中拥有 `16 GB` RAM，
 偶数存储体属于节点 0，奇数存储体属于节点 1：
+
 ```
 0              4G              8G             12G            16G
 +-------------+ +-------------+ +-------------+ +-------------+
@@ -136,21 +132,22 @@ Linux 可用于多种体系结构，因此需要一种**独立于体系结构**�
 除了`struct node`之外，内核还维护一个名为 `node_states` 的` nodemask_t` 位掩码数组。 
 该数组中的每个位掩码代表一组具有枚举 `node_states` 定义的特定属性的节点：
 
- - N_POSSIBLE : The node could become online at some point.
+- N_POSSIBLE : The node could become online at some point.
 
- - N_ONLINE ：The node is online.
+- N_ONLINE ：The node is online.
 
- - N_NORMAL_MEMORY : The node has regular memory.
+- N_NORMAL_MEMORY : The node has regular memory.
 
- - N_HIGH_MEMORY : The node has regular or high memory. When CONFIG_HIGHMEM is disabled aliased to N_NORMAL_MEMORY.
+- N_HIGH_MEMORY : The node has regular or high memory. When CONFIG_HIGHMEM is disabled aliased to N_NORMAL_MEMORY.
 
- - N_MEMORY: The node has memory(regular, high, movable)
+- N_MEMORY: The node has memory(regular, high, movable)
 
- - N_CPU :The node has one or more CPUs
- 
+- N_CPU :The node has one or more CPUs
+
 对于具有上述属性的每个节点，设置与 `node_states[<property>]` 位掩码中的节点 ID 相对应的位。
 
 例如，对于具有正常内存和 CPU 的`Node 2`，`bit 2` 将被设置为
+
 ```
 node_states[N_POSSIBLE]
 node_states[N_ONLINE]
@@ -165,6 +162,7 @@ node_states[N_CPU]
 其中，节点掩码用于提供节点遍历的宏，即 `for_each_node()` 和 `for_each_online_node()`
 
 例如，为每个在线节点调用函数 foo()：
+
 ```
 for_each_online_node(nid) {
         pg_data_t *pgdat = NODE_DATA(nid);
@@ -179,56 +177,55 @@ for_each_online_node(nid) {
 
 #### 通用字段
 
-  - `node_zones`: 该`NODE` 包含的`Zone`。 并非所有`Zone`都已填充，但这是完整列表。 
-    它被该节点的`node_zonelists`以及其他节点的`node_zonelists`引用
-  - `node_zonelists`: 所有`Node`的所有`zONE`的列表。 此列表定义了优先分配的`Zone`的顺序。 
-    ` node_zonelists`是在核心内存管理结构初始化期间由 `mm/page_alloc.c` 中的 `build_zonelists()` 设置的。
-  - `nr_zones`: 该节点中已填充`zONE`的数量。
-  - `node_mem_map`:对于使用 `FLATMEM` 内存模型的 `UMA `系统，0 的节点` node_mem_map` 是表示每个物理帧的结构页数组
-  - `node_start_pfn`: 该节点中起始页框的页框号。
-  - `node_present_pages`: 该节点中存在的物理页总数。
-  - `node_spanned_pages`:物理页范围的总大小，包括空洞
-  - `node_size_lock`:物理页范围的总大小，保护定义节点范围的字段的锁。 
-     仅当至少启用` CONFIG_MEMORY_HOTPLUG` 或` CONFIG_DEFERRED_STRUCT_PAGE_INIT `配置选项之一时才定义。
-	 提供 `pgdat_resize_lock()` 和` pgdat_resize_unlock() `来操作` node_size_lock`，
-	 而不检查 `CONFIG_MEMORY_HOTPLUG` 或 `CONFIG_DEFERRED_STRUCT_PAGE_INIT`
-  - `node_id`
-  - `totalreserve_pages`:这是每个节点保留的页面，不可用于用户空间分配。
-  - `first_deferred_pfn`：如果大型机器上的内存初始化被推迟，那么这是第一个需要初始化的 PFN。 
-     仅当 `CONFIG_DEFERRED_STRUCT_PAGE_INIT `启用时定义
-  - `deferred_split_queue`:每个节点的大页面队列，其分割被推迟。 仅当启用 `CONFIG_TRANSPARENT_HUGEPAGE` 时定义。
-  - `__lruvec`： 每个节点 `lruvec `保存 LRU 列表和相关参数。 仅在禁用内存 cgroup 时使用。 
-    不应直接访问它，而是使用 `mem_cgroup_lruvec() `来查找 `lruvecs`。
+- `node_zones`: 该`NODE` 包含的`Zone`。 并非所有`Zone`都已填充，但这是完整列表。 
+  它被该节点的`node_zonelists`以及其他节点的`node_zonelists`引用
+- `node_zonelists`: 所有`Node`的所有`zONE`的列表。 此列表定义了优先分配的`Zone`的顺序。 
+  ` node_zonelists`是在核心内存管理结构初始化期间由 `mm/page_alloc.c` 中的 `build_zonelists()` 设置的。
+- `nr_zones`: 该节点中已填充`zONE`的数量。
+- `node_mem_map`:对于使用 `FLATMEM` 内存模型的 `UMA `系统，0 的节点` node_mem_map` 是表示每个物理帧的结构页数组
+- `node_start_pfn`: 该节点中起始页框的页框号。
+- `node_present_pages`: 该节点中存在的物理页总数。
+- `node_spanned_pages`:物理页范围的总大小，包括空洞
+- `node_size_lock`:物理页范围的总大小，保护定义节点范围的字段的锁。 
+   仅当至少启用` CONFIG_MEMORY_HOTPLUG` 或` CONFIG_DEFERRED_STRUCT_PAGE_INIT `配置选项之一时才定义。
+   提供 `pgdat_resize_lock()` 和` pgdat_resize_unlock() `来操作` node_size_lock`，
+   而不检查 `CONFIG_MEMORY_HOTPLUG` 或 `CONFIG_DEFERRED_STRUCT_PAGE_INIT`
+- `node_id`
+- `totalreserve_pages`:这是每个节点保留的页面，不可用于用户空间分配。
+- `first_deferred_pfn`：如果大型机器上的内存初始化被推迟，那么这是第一个需要初始化的 PFN。 
+   仅当 `CONFIG_DEFERRED_STRUCT_PAGE_INIT `启用时定义
+- `deferred_split_queue`:每个节点的大页面队列，其分割被推迟。 仅当启用 `CONFIG_TRANSPARENT_HUGEPAGE` 时定义。
+- `__lruvec`： 每个节点 `lruvec `保存 LRU 列表和相关参数。 仅在禁用内存 cgroup 时使用。 
+  不应直接访问它，而是使用 `mem_cgroup_lruvec() `来查找 `lruvecs`。
 
 #### 内存回收字段
 
 未完成 只列出了node中的一些字段
 
- - `kswapd`:每个`node`有一个内存回收内核线程
- - `kswapd_wait, pfmemalloc_wait, reclaim_wait`: 用于同步内存回收任务的工作队列
- - `nr_writeback_throttled`:因等待脏页清理而受到限制的任务数。
- - `nr_reclaim_start`: 指标代表在回收被限制等待回写时写入的页面数量。
- - `kswapd_order`: 控制 kswapd 尝试回收的顺序
- - `kswapd_highest_zoneidx`: kswapd要回收的最高区域索引
- - `kswapd_failures`:kswapd 无法回收任何页面的运行次数
- - `min_unmapped_pages`: 无法回收的未映射文件支持页面的最小数量。 由 `vm.min_unmapped_ratio sysctl` 确定。
-     仅在启用 `CONFIG_NUMA `时定义。
- - `min_slab_pages`:无法回收的 SLAB 页的最小数量。 由` vm.min_slab_ratio sysctl `确定。 仅在启用` CONFIG_NUMA `时定义
- - `flags`:控制内存回收标记
- 
+- `kswapd`:每个`node`有一个内存回收内核线程
+- `kswapd_wait, pfmemalloc_wait, reclaim_wait`: 用于同步内存回收任务的工作队列
+- `nr_writeback_throttled`:因等待脏页清理而受到限制的任务数。
+- `nr_reclaim_start`: 指标代表在回收被限制等待回写时写入的页面数量。
+- `kswapd_order`: 控制 kswapd 尝试回收的顺序
+- `kswapd_highest_zoneidx`: kswapd要回收的最高区域索引
+- `kswapd_failures`:kswapd 无法回收任何页面的运行次数
+- `min_unmapped_pages`: 无法回收的未映射文件支持页面的最小数量。 由 `vm.min_unmapped_ratio sysctl` 确定。
+    仅在启用 `CONFIG_NUMA `时定义。
+- `min_slab_pages`:无法回收的 SLAB 页的最小数量。 由` vm.min_slab_ratio sysctl `确定。 仅在启用` CONFIG_NUMA `时定义
+- `flags`:控制内存回收标记
+
 #### 压缩控制字段
 
- - `kcompactd_max_order` :kcompactd 应该尝试实现的页面大小。
- - `kcompactd_highest_zoneidx` : kcompactd 要压缩的最高区域索引。
- - `kcompactd_wait`:Workqueue 用于同步内存压缩任务。
- - `kcompactd`:每个`node`有一个内存压缩线程
- - `proactive_compact_trigger`:确定是否启用主动压缩。 由 `vm.compaction_proactiveness sysctl` 控制。
+- `kcompactd_max_order` :kcompactd 应该尝试实现的页面大小。
+- `kcompactd_highest_zoneidx` : kcompactd 要压缩的最高区域索引。
+- `kcompactd_wait`:Workqueue 用于同步内存压缩任务。
+- `kcompactd`:每个`node`有一个内存压缩线程
+- `proactive_compact_trigger`:确定是否启用主动压缩。 由 `vm.compaction_proactiveness sysctl` 控制。
 
 #### 统计
 
- - `per_cpu_nodestats`: 节点的每 CPU VM 统计信息
- - `vm_stat`: 每个节点的虚拟内存统计
- 
+- `per_cpu_nodestats`: 节点的每 CPU VM 统计信息
+- `vm_stat`: 每个节点的虚拟内存统计
 
 ## PageTables
 
@@ -237,7 +234,6 @@ for_each_online_node(nid) {
 1985 年，该功能被包含在 Intel 80386 中，Linux 1.0 就是在该 CPU 上开发的。
 
 页表将 CPU 看到的虚拟地址映射到外部内存总线上看到的物理地址。
-
 
 Linux 将页表定义为一个层次结构，目前的高度为五级。 然后，每个受支持架构的架构代码会将其映射到硬件的限制。
 
@@ -254,7 +250,6 @@ Linux 将页表定义为一个层次结构，目前的高度为五级。 然后�
 正如您所看到的，对于 4KB 页面，页面基地址使用地址的第 `12-31` 位，这就是为什么在这种情况下 
 `PAGE_SHIFT `定义为 12，而 `PAGE_SIZE` 通常根据页面移位定义为 (1 << PAGE_SHIFT ）
 
-
 随着时间的推移，为了响应不断增加的内存大小，已经开发出更深的层次结构。 
 当 Linux 创建时，使用了 4KB 页面和一个名为 `swapper_pg_dir` 的包含` 1024` 个条目的页表，
 覆盖 `4MB`，这与 Torvald 的第一台计算机拥有 4MB 物理内存的事实相吻合。 该表中的条目称为 PTE:s - 页表条目。
@@ -264,15 +259,14 @@ Linux 将页表定义为一个层次结构，目前的高度为五级。 然后�
 人们当然可以想象一个包含大量条目的单个线性页表，将整个内存分解为单个页面。
 
  这样的页表将非常稀疏，因为大部分虚拟内存通常保持未使用状态。 
- 
+
  通过使用分层页表，虚拟地址空间中的大洞不会浪费宝贵的页表内存，
  因为它足以在页表层次结构中的较高级别将大区域标记为未映射。
- 
+
  此外，在现代 CPU 上，更高级别的页表条目可以直接指向物理内存范围，
  这允许在单个高级页表条目中映射几兆字节甚至千兆字节的连续范围，从而将虚拟内存映射到 物理内存：
  当您找到这样的大映射范围时，无需在层次结构中进行更深入的遍历。
- 
- 
+
 页表层次结构现在已经发展成这样：
 
 ```
@@ -299,9 +293,9 @@ Linux 将页表定义为一个层次结构，目前的高度为五级。 然后�
 
 页表层次结构的不同级别上的符号从底部开始具有以下含义：
 
- - `pte, pte_t, pteval_t` = 页表条目; 前面提到过。` pte` 是` pteval_t` 类型的 `PTRS_PER_PTE` 元素的数组，
-    每个元素将虚拟内存的单页映射到物理内存的单页。 该架构定义了 `pteval_t `的大小和内容。
-    一个典型的例子是 pteval_t 是一个 32 位或 64 位值，其中高位是 `pfn`，低位是一些特定于体系结构的位，例如内存保护。
+- `pte, pte_t, pteval_t` = 页表条目; 前面提到过。` pte` 是` pteval_t` 类型的 `PTRS_PER_PTE` 元素的数组，
+   每个元素将虚拟内存的单页映射到物理内存的单页。 该架构定义了 `pteval_t `的大小和内容。
+   一个典型的例子是 pteval_t 是一个 32 位或 64 位值，其中高位是 `pfn`，低位是一些特定于体系结构的位，例如内存保护。
 
 重复一下：页表层次结构中的每个级别都是一个指针数组，因此` pgd `包含指向下一个级别的 
 `PTRS_PER_PGD` 指针，`p4d` 包含指向 `pud `项的 `PTRS_PER_P4D `指针，依此类推。 
@@ -322,7 +316,7 @@ Linux 将页表定义为一个层次结构，目前的高度为五级。 然后�
                          ...
 ```
 
-### 页表折叠 
+### 页表折叠
 
 如果体系结构不使用所有页表级别，则可以折叠它们，这意味着跳过，
 并且对页表执行的所有操作都将在编译时增强，以便在访问下一个较低级别时跳过一个级别。
@@ -331,6 +325,7 @@ Linux 将页表定义为一个层次结构，目前的高度为五级。 然后�
 以便它遍历当前的所有五个级别。 这种风格也应该是特定于体系结构的代码的首选，以便对未来的变化具有鲁棒性。
 
 ### MMU TLB 和 page fault
+
 内存管理单元 (MMU) 是处理虚拟地址到物理地址转换的硬件组件。 它可以在硬件中使用相对较小的高速缓存，
 称为转换后备缓冲区 (TLB) 和页面遍历高速缓存来加速这些转换。 
 
@@ -341,7 +336,6 @@ Linux 将页表定义为一个层次结构，目前的高度为五级。 然后�
 每个内存页都有关联的权限和脏位。 后者表明该页面自加载到内存以来已被修改。
 
 如果没有任何阻碍，最终可以访问物理内存并在物理帧上执行请求的操作。
-
 
 MMU 找不到映射的原因有多种。 发生这种情况的原因可能是 CPU 正在尝试访问当前任务不允许的内存，
 或者数据未存在于物理内存中。
@@ -354,7 +348,6 @@ MMU 找不到映射的原因有多种。 发生这种情况的原因可能是 CP
 这些技术提高了内存效率，减少了延迟，并最大限度地减少了空间占用。 
 本文档不会更深入地讨论“延迟分配”和“写入时复制”的细节，因为这些主题超出了范围，因为它们属于进程地址管理。
 
-
 交换与其他提到的技术不同，因为它是不可取的，因为它是作为在高压力下减少内存的一种手段来执行的。
 
 交换不能用于内核逻辑地址映射的内存。 它们是内核虚拟空间的子集，直接映射连续的物理内存范围。
@@ -365,7 +358,6 @@ MMU 找不到映射的原因有多种。 发生这种情况的原因可能是 CP
 如果内核无法为物理帧中必须存在的数据腾出空间，内核会调用内存不足 (OOM) 杀手，
 通过终止较低优先级进程来腾出空间，直到压力降低到安全阈值以下。
 
-
 此外，页面错误也可能是由代码错误或 CPU 被指示访问的恶意制作的地址引起的。 进程的线程可以使用指令来寻址不属于其自己的地址空间的（非共享）内存，
 或者可以尝试执行想要写入只读位置的指令。
 
@@ -373,7 +365,6 @@ MMU 找不到映射的原因有多种。 发生这种情况的原因可能是 CP
 
 本文档将简化并展示 Linux 内核如何处理这些页面错误、创建表和表条目、检查内存是否存在以及如果不存在则请求从持久存储或其他设备加载数据的高空视图 ，
 并更新 MMU 及其缓存。
-
 
 第一步取决于架构。 大多数体系结构跳转到 `do_page_fault()`，而 x86 中断处理程序由调用
 ` handle_page_fault() `的 `DEFINE_IDTENTRY_RAW_ERRORCODE()` 宏定义。
@@ -383,7 +374,7 @@ MMU 找不到映射的原因有多种。 发生这种情况的原因可能是 CP
 
 不幸的是，无法调用 `__handle_mm_fault() `意味着虚拟地址指向不允许访问的物理内存区域（至少从当前上下文）。
  这种情况导致内核向进程发送上述 SIGSEGV 信号，并导致已经解释过的后果。
- 
+
 `__handle_mm_fault()` 通过调用几个函数来查找页表上层条目的偏移量并分配它可能需要的表来完成其工作。
 
 查找偏移量的函数的名称类似于 `*_offset()`， `pgd、p4d、pud、pmd、pte`； 
@@ -411,8 +402,6 @@ Linux 支持比通常的 4KB 更大的页面大小（即所谓的大页面）。
 分别禁用和启用页面错误处理程序。
 
 多个代码路径使用后两个函数，因为它们需要禁用页面错误处理程序中的陷阱，主要是为了防止死锁。
-
-
 
 ## 内存管理员文档
 
@@ -457,12 +446,11 @@ CPU 可以将虚拟地址转换为物理地址。
 虚拟地址的高位用于索引顶层页表中的一个条目。然后使用该条目访问层次结构中的下一级，
 并将虚拟地址的下一位作为该级页表的索引。虚拟地址的最低位定义实际页面内的偏移量。
 
-#### 大页 
+#### 大页
 
 地址转换需要多次访问内存，而访问内存的速度相对于 CPU 的速度较慢。为避免将宝贵的处理器周期耗费在地址转换上，
 CPU 会将此类转换保存在一个缓存中，该缓存称为转换旁侧缓存（或 TLB）。
 通常，TLB 是非常稀缺的资源，具有大型内存工作集的应用程序会因为 TLB 未命中而受到性能影响。
-
 
 许多现代 CPU 架构允许直接通过页表中的较高层次映射内存页。例如，在 x86 处理器上，可以使用二级和三级页表中的条目映射 
 2M 甚至 1G 的页面。在 Linux 中，这种页面被称为超大页面。使用超大页可以大大减轻 TLB 的压力，
@@ -472,15 +460,13 @@ Linux 中有两种机制可以实现物理内存与超大页的映射。第一�
 这是一种使用 `RAM `作为后备存储的`伪文件系统`。对于在该文件系统中创建的文件，数据驻留在内存中，
 并使用巨页进行映射。有关 hugetlbfs 的介绍，请访问 [HugeTLB Pages](https://www.kernel.org/doc/html/latest/admin-guide/mm/hugetlbpage.html)
 
-
 另一种较新的巨量页使用机制被称为透明巨量页（`Transparent HugePages`）或 `THP`。
 hugetlbfs 要求用户和/或系统管理员配置系统内存的哪些部分应该或可以被巨量页映射，
 而 THP 则不同，它以对用户透明的方式管理这些映射，因此得名。有关 THP 的更多详情，请参阅
 [Transparent Hugepage Support](https://www.kernel.org/doc/html/latest/admin-guide/mm/transhuge.html)
 
-
 #### ZONES
- 
+
 硬件通常会对如何访问不同的物理内存范围做出限制。在某些情况下，设备无法对所有可寻址内存执行 DMA。
 在其他情况下，物理内存的大小超过了虚拟内存的最大可寻址大小，需要采取特殊措施才能访问部分内存。
 Linux 会根据内存页的可能用途将其划分为不同的区域。例如，ZONE_DMA 包含可被设备用于 DMA 的内存，
@@ -496,13 +482,14 @@ Linux 为每个节点构建了一个独立的内存管理子系统。每个节�
 可用和已用页面列表以及各种统计计数器。有关 NUMA 的更多详情，请参阅《什么是 NUMA》和《NUMA 内存策略》。
 
 #### Page Cache
+
 物理内存是易失性的，将数据读入内存的常见情况是从文件中读取数据。每当读取文件时，数据都会被放入页面缓存，
 以避免后续读取时昂贵的磁盘访问。同样，在向文件写入数据时，数据也会被放入页面缓存，
 并最终进入后备存储设备。写入的页面会被标记为 "脏"，当 Linux 决定将它们用于其他用途时，
 就会确保设备上的文件内容与更新的数据同步。
 
-
 #### Anonymous Memory
+
 匿名内存或匿名映射代表没有文件系统支持的内存。此类映射是为程序的堆栈和堆隐式创建的，
 或者是通过显式调用 `mmap(2)` 系统调用创建的。通常，匿名映射只定义允许程序访问的虚拟内存区域。
 读取访问将导致创建一个页表项，该页表项将引用一个填满 `0 `的特殊物理页。当程序执行写操作时，
@@ -536,7 +523,6 @@ Linux 为每个节点构建了一个独立的内存管理子系统。每个节�
 当压缩扫描结束后，空闲页面会被集中到区域的起始位置，这样就可以分配大的物理连续区域了。
 
 与回收一样，压缩可能在 kcompactd 守护进程中异步发生，也可能由于内存分配请求而同步发生。
-
 
 #### OOM killer
 
