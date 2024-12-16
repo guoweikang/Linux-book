@@ -29,51 +29,55 @@ nav:
     - '编码守则': 'intro/code.md'
     - '环境配置': 'intro/linux_tools_install.md'
     - 'gdb调试qemu': 'intro/gdb.md'
-  - 内核启动分析:
-    - '启动流程': 'init/start.md'
-    - 'initcall': 'init/initcall.md'
-  - 内核配置:
-    - 'obsolate Param': 'config/obsolate_param.md'
-    - 'Kernel&Module Param': 'config/kernel_param.md'
-    - 'bootconfig': 'config/boot_config.md'
-  - 基础机制:
-    - 'refcont': 'foundation/refcnt.md'
-    - 'kref': 'foundation/kref.md'
-    - '并发同步': 'foundation/lock.md'
-    - '读写睡眠锁': 'foundation/rw_semaphore.md'
-   - 内存子系统: 
-    - '基础知识': 'mem/index.md'
-    - 'arm64:内核镜像内存访问': 'mem/early_init/kernel_map.md'
-    - 'arm64:fixmap内存': 'mem/early_init/fixmap.md'
-    - '早期内存管理：memblock': 'mem/early_init/memblock.md'
-    - 'arm64:线性内存区': mem/early_init/line_map.md'
-  - 文件系统:
-    - 'fs type': 'fs/fs_type_frame/fs_type.md'
-    - 'fs context': 'fs/fs_type_frame/fs_context.md'
-    - 'vfsconfig-1: fs parser': 'fs/fs_type_frame/fs_parser.md'
-    - 'vfsconfig-2: mount config': 'fs/vfs/vfs_mount_config.md'
-  - 驱动子系统:
-    - 'dts': 'driver/dts.md'
-    - 'clk': 'driver/clk.md'
-  - ARM异常机制: 
-    - '简介': 'interrupt/index.md'
-    - 'ARM64单CPU': 'interrupt/arm64.md'
-  - DFX工具系列:
-    - 'log': 'debug/log.md'
-    - 'gdb': 'debug/gdb.md'
-  - Trace 系列: 
-    - '新手初窥': 'debug/first_look.md'
-    - 'ftrace-1:dynmaic ftrace': 'debug/ftrace-design.md'
-    - 'ftrace-2:stack trace': 'debug/stack_trace.md'
-    - 'ftrace-3:fprobe': 'debug/fprobe.md'
-    - 'ftrace-4:filter/command': 'debug/ftrace_filter.md'
-    - 'kprobe': 'debug/kprobe.md'
-    - 'uprobe': 'debug/uprobe.md'
-    - 'tracepoints': 'debug/tracepoints.md'
-    - '基础设施：tracefs': 'debug/tracefs.md'
-    - 'Event-Trace-1: event print': 'debug/events_print.md'
-    - 'trace-7:kprobe-events': 'debug/kprobe-events.md'
-    - 'ftrace-tools': 'debug/ftrace_tools.md'
-    - 'debug_objects': 'debug/debug_objects.md'
-  - 经验总结: 
-    - '启动时间优化': 'experience/start.md'
+    
+    
+#
+#- 内核启动分析:
+#  - '启动流程': 'init/start.md'
+#  - 'initcall': 'init/initcall.md'
+#- 内核配置:
+#  - 'obsolate Param': 'config/obsolate_param.md'
+#  - 'Kernel&Module Param': 'config/kernel_param.md'
+#  - 'bootconfig': 'config/boot_config.md'
+#- 基础机制:
+#  - 'refcont': 'foundation/refcnt.md'
+#  - 'kref': 'foundation/kref.md'
+#  - '并发同步': 'foundation/lock.md'
+#  - '读写睡眠锁': 'foundation/rw_semaphore.md'
+# - 内存子系统: 
+#  - '基础知识': 'mem/index.md'
+#  - 'arm64:内核镜像内存访问': 'mem/early_init/kernel_map.md'
+#  - 'arm64:fixmap内存': 'mem/early_init/fixmap.md'
+#  - '早期内存管理：memblock': 'mem/early_init/memblock.md'
+#  - 'arm64:线性内存区': mem/early_init/line_map.md'
+#- 文件系统:
+#  - 'fs type': 'fs/fs_type_frame/fs_type.md'
+#  - 'fs context': 'fs/fs_type_frame/fs_context.md'
+#  - 'vfsconfig-1: fs parser': 'fs/fs_type_frame/fs_parser.md'
+#  - 'vfsconfig-2: mount config': 'fs/vfs/vfs_mount_config.md'
+#- 驱动子系统:
+#  - 'dts': 'driver/dts.md'
+#  - 'clk': 'driver/clk.md'
+#- ARM异常机制: 
+#  - '简介': 'interrupt/index.md'
+#  - 'ARM64单CPU': 'interrupt/arm64.md'
+#- DFX工具系列:
+#  - 'log': 'debug/log.md'
+#  - 'gdb': 'debug/gdb.md'
+#- Trace 系列: 
+#  - '新手初窥': 'debug/first_look.md'
+#  - 'ftrace-1:dynmaic ftrace': 'debug/ftrace-design.md'
+#  - 'ftrace-2:stack trace': 'debug/stack_trace.md'
+#  - 'ftrace-3:fprobe': 'debug/fprobe.md'
+#  - 'ftrace-4:filter/command': 'debug/ftrace_filter.md'
+#  - 'kprobe': 'debug/kprobe.md'
+#  - 'uprobe': 'debug/uprobe.md'
+#  - 'tracepoints': 'debug/tracepoints.md'
+#  - '基础设施：tracefs': 'debug/tracefs.md'
+#  - 'Event-Trace-1: event print': 'debug/events_print.md'
+#  - 'trace-7:kprobe-events': 'debug/kprobe-events.md'
+#  - 'ftrace-tools': 'debug/ftrace_tools.md'
+#  - 'debug_objects': 'debug/debug_objects.md'
+#- 经验总结: 
+#  - '启动时间优化': 'experience/start.md'
+#
