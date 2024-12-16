@@ -29,16 +29,16 @@ nav:
     - '编码守则': 'intro/code.md'
     - '环境配置': 'intro/linux_tools_install.md'
     - 'gdb调试qemu': 'intro/gdb.md'
-    
+  - 内核配置:
+    - 'obsolate Param': 'config/obsolate_param.md'
+    - 'Kernel&Module Param': 'config/kernel_param.md'
+    - 'bootconfig': 'config/boot_config.md'
     
 #
 #- 内核启动分析:
 #  - '启动流程': 'init/start.md'
 #  - 'initcall': 'init/initcall.md'
-#- 内核配置:
-#  - 'obsolate Param': 'config/obsolate_param.md'
-#  - 'Kernel&Module Param': 'config/kernel_param.md'
-#  - 'bootconfig': 'config/boot_config.md'
+
 #- 基础机制:
 #  - 'refcont': 'foundation/refcnt.md'
 #  - 'kref': 'foundation/kref.md'
