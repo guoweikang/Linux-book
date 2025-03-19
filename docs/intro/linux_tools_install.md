@@ -299,7 +299,7 @@ $ git commit -s
 
 ```
     $ git  format-patch  --subject-prefix='PATCH'   -1 
-    $ 本地目录生成  0001-debugobjects-add-pr_warn.patch
+    $ 本。地目录生成  0001-debugobjects-add-pr_warn.patch
     $ ./scripts/checkpatch.pl  0001-debugobjects-add-pr_warn.patch  --检查补丁
 ```
 

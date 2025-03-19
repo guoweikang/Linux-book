@@ -1,4 +1,4 @@
-## 设备树内存映射
+## fixmap
 
 ```json
 "node" {
@@ -15,18 +15,18 @@
 
 #### 虚拟内存
 
-这里先让我们回顾一下 内核线性地址的划分:
+这里先让我们回顾一下 `arm64`内核线性地址的划分:
 
 <img title="" src="../image/22.png" alt="Screenshot" data-align="inline">
 
-可以看到`FIXMAP` 的虚拟内存空间，内核会使用这段虚拟内存 做一些前期初始化工作，关于fixmap的地址描述在:`/arch/arm64/include/asm/fixmap.h`
+其中有一段`FIXMAP` 的虚拟内存空间，内核会使用这段虚拟内存 做一些前期初始化工作，关于`fixmap`的地址描述在:`/arch/arm64/include/asm/fixmap.h`
 
 内核对于该地址空间的描述: 这段注释解释了在内核中定义的一组特殊虚拟地址，这些地址在编译时是常量，
 但在启动过程中才会与物理地址关联。这些特殊虚拟地址通常用于处理内核启动和底层硬件初始化等任务
 
 我们通过图示展示一下 fixmap 内存区域主要功能
 
-### 框架设计实现
+### 设计实现
 
 #### 内存区域说明
 
@@ -36,7 +36,7 @@
 
 - 永久映射区： 意味着这段虚拟内存和物理内存映射关系一旦确认轻易不会发生变化
 
-- 临时映射区：代表这个虚拟内存地址映射的物理内存不是固定的，非常典型的为 `FIX_PTE/PUD/PMD` 分别用于：当为内存在实现内存映射时，如果涉及到需要申请新的页表， 需要先申请页表的物理内存`page`，为了完成页表设置初始化，需要临时把页表映射在某段虚拟内存上才可以访问，因此`FIX_PTE/xxx`主要代表 临时申请的动态页表虚存，在访问使用完后，必须要解除映射关系，接触后对应虚拟内存不再有意义
+- 临时映射区：代表这个虚拟内存地址映射的物理内存不是固定的，非常典型的为 `FIX_PTE/PUD/PMD` 用于：实现内存映射时，如果涉及到需要申请新的页表， 需要先申请页表的物理内存`page`，为了完成页表设置初始化，需要临时把页表映射在某段虚拟内存上才可以访问，因此`FIX_PTE/xxx`主要代表 临时申请的动态页表虚存，在访问使用完后，必须要解除映射关系，解除后对应虚拟内存不再有意义
 
 #### 内存区域大小
 
@@ -48,8 +48,7 @@ __end_of_permanent_fixed_addresses // 是 enum fixed_addresses 的结束索引
 #define FIXADDR_SIZE    (__end_of_permanent_fixed_addresses << PAGE_SHIFT) 
 #define FIXADDR_START   (FIXADDR_TOP - FIXADDR_SIZE)
 
-#define __fix_to_virt(x)        (FIXADDR_TOP - ((x) << PAGE_SHIFT))  // 从FIX功能区 ENMU 得到该 内容所在 VA地址 
-#define __virt_to_fix(x)        ((FIXADDR_TOP - ((x)&PAGE_MASK)) >> PAGE_SHIFT) // 从VA地址，得到该地址 的FIX功能区 ENUM
+
 ```
 
 #### fixmap 页表
@@ -79,6 +78,15 @@ setup_arch
 
 #### 核心API
 
+##### fix_to_virt
+
+下面这两个接口用于在`FIX_ENUM` 和 虚拟内存之间转换
+
+```c
+unsigned long fix_to_virt(const unsigned int idx)
+unsigned long virt_to_fix(const unsigned long vaddr)
+```
+
 ##### set_fixmap_(nocache/io)
 
 以不同内存权限映射物理内存`PAGE_KERNEL`  
@@ -91,78 +99,15 @@ setup_arch
 
 - phys： 该虚拟内存需要映射的物理内存
 
-- nocache： 以 normal - noncache 映射
+- nocache： 以` normal - noncache` 映射
 
-- io: 以 DEVICE_nGnRE 映射 
+- io: 以 `DEVICE_nGnRE `映射 
 
 由于`fixmap`页表已经是填充好的，直接找到`pte` 表项修改对应页表项即可 
 
 ##### set_fixmap_offset(nocache/io)
 
-功能和`set_fixmap` 类似，额外增加一个返回值 ，返回映射后的虚存
-
-### early_ioremap
-
-在`fixmap` 临时映射区域，有一段虚拟内存是预留给 `early_ioremap`早期的`mmio`设备内存访问使用的，此时`ioremap`子系统还未初始化
-
-#### 内存大小
-
-从`FIX_BTMAP_BEGIN` - `FIX_BTMAP_END`，在4k页表配置下，会预留 `7`个槽位，其中每个槽位内存大小`256k` ，内存范围大小`7 * 256K`
-
-```c
-  #define NR_FIX_BTMAPS           (SZ_256K / PAGE_SIZE)
-  #define FIX_BTMAPS_SLOTS        7
-  #define TOTAL_FIX_BTMAPS        (NR_FIX_BTMAPS * FIX_BTMAPS_SLOTS)
-
-   FIX_BTMAP_END = __end_of_permanent_fixed_addresses,
-   FIX_BTMAP_BEGIN = FIX_BTMAP_END + TOTAL_FIX_BTMAPS - 1,
-```
-
-#### 核心数据结构
-
-此模块维护了 3个全局变量 
-
-```c
-  static void __iomem *prev_map[FIX_BTMAPS_SLOTS] __initdata;
-  static unsigned long prev_size[FIX_BTMAPS_SLOTS] __initdata;
-  static unsigned long slot_virt[FIX_BTMAPS_SLOTS] __initdata;
-```
-
-数组中每个元素分别对应每个槽位的如下内容：
-
-- prev_map[i]: 对应第`i`个槽位当前真实映射的 可访问的物理内存的虚拟内存起始位置 
-
-- prev_size[i]: 对应第`i`个槽位当前真实映射的 物理内存的大小
-
-- slot_virt[i]: 对应第`i`个槽位的虚拟内存起始地址
-
-![](../image/early_ioremap.png)
-
-#### 核心API
-
-##### early_ioremap
-
-```c
-__early_ioremap(resource_size_t phys_addr, unsigned long size, pgprot_t prot)
-```
-
-此接口尝试找到未使用的`slot`,并以`FIXMAP_PAGE_IO`标志 完成物理内存和虚拟内存的映射,返回设备虚拟内存
-
-##### early_iounmap
-
-```c
-  void __init early_iounmap(void __iomem *addr, unsigned long size)
-```
-
-解除内存映射
-
-##### early_memremap/unmap
-
- 以`normal`权限映射/解映射内存
-
-#### config
-
-bootconfig 开启`early_ioremap_debug ` 可以打印相关日志
+功能和`set_fixmap` 类似，但是会返回映射后的虚存
 
 ### fdt
 

@@ -89,8 +89,6 @@
           kp.post_handler = handler_post;
 ```
 
-
-
 #### （un）register_kprobe
 
 注册kprobe
@@ -114,8 +112,6 @@
 ### enable(disable)__kprobe
 
 和注册类似，不同在于不会申请和销毁`kprobe`相关资源 只是取消回调
-
-
 
 ### Kretprobe API
 

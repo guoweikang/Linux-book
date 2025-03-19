@@ -29,39 +29,58 @@ nav:
     - '编码守则': 'intro/code.md'
     - '环境配置': 'intro/linux_tools_install.md'
     - 'gdb调试qemu': 'intro/gdb.md'
-  - 基础机制:
+  - Basci:
     - 'refcont': 'foundation/refcnt.md'
     - 'kref': 'foundation/kref.md'
     - '并发同步': 'foundation/lock.md'
-    - '读写睡眠锁': 'foundation/rw_semaphore.md'
-  - 内核配置:
+    - 'rw_semaphore': 'foundation/rw_semaphore.md'
+  - kernel param:
     - 'obsolate Param': 'config/obsolate_param.md'
     - 'Kernel&Module Param': 'config/kernel_param.md'
     - 'bootconfig': 'config/boot_config.md'
-  - 启动分析:
+  - start init:
     - '启动流程': 'init/start.md'
     - 'initcall': 'init/initcall.md'
-  - 内存:
+  - mem page allocator:
     - '基础知识': 'mem/index.md'
-    - 'arm64:内核镜像内存访问': 'mem/early_init/kernel_map.md'
-    - 'arm64:fixmap内存': 'mem/early_init/fixmap.md'
-    - '早期内存管理：memblock': 'mem/early_init/memblock.md'
-    - 'arm64:线性内存': mem/early_init/line_map.md'
+    - 'arm64:kernel image map': 'mem/early_init/kernel_map.md'
+    - 'VA Range:fixmap': 'mem/early_init/fixmap.md'
+    - 'fixmap: early_ioremap': 'mem/early_init/early_ioremap.md'
+    - 'early manage：memblock': 'mem/early_init/memblock.md'
+    - 'arm64:line map': mem/early_init/line_map.md'
+    - 'page-allocator-1:PFN': mem/phys_mem/page.md'
+    - 'page-allocator-2:sparse': mem/phys_mem/sparse.md'
+    - 'page-allocator-3:numa/zone': mem/phys_mem/zone.md'
+    - 'page-allocator-4:buddy算法': mem/phys_mem/buddy.md'
+    - 'page-allocator-5:pcp优先': mem/phys_mem/pcp.md'
+    - 'page-allocator-6:wmark': mem/phys_mem/wmark.md'
+    - 'page-allocator-7:migrate_type': mem/phys_mem/migrate_type.md'
+    - 'page-allocator-8:gfp_t/alloc_flags': mem/phys_mem/gfp.md'
+    - 'page-allocator-9:pages_alloc': mem/phys_mem/page_alloc.md'
+    - 'page-allocator-10:API': mem/phys_mem/api.md'
+    - 'config': mem/phys_mem/kconfig.md'
+    - 'debug': mem/phys_mem/debug.md'
 
-#- 文件系统:
-#  - 'fs type': 'fs/fs_type_frame/fs_type.md'
-#  - 'fs context': 'fs/fs_type_frame/fs_context.md'
-#  - 'vfsconfig-1: fs parser': 'fs/fs_type_frame/fs_parser.md'
-#  - 'vfsconfig-2: mount config': 'fs/vfs/vfs_mount_config.md'
-#- 驱动子系统:
-#  - 'dts': 'driver/dts.md'
-#  - 'clk': 'driver/clk.md'
-#- ARM异常机制: 
-#  - '简介': 'interrupt/index.md'
-#  - 'ARM64单CPU': 'interrupt/arm64.md'
-#- DFX工具系列:
-#  - 'log': 'debug/log.md'
-#  - 'gdb': 'debug/gdb.md'
+  - mem slub/cache allocator:
+    - 'slub-allocator-1:介绍': mem/slub/intro.md'
+    - 'slub-allocator-2:数据结构': mem/slub/struct.md'
+    - 'slub-allocator-3:核心逻辑': mem/slub/struct.md'
+    - 'slub-allocator-4:API': mem/slub/api.md'
+    - 'config': mem/slub/config.md'
+    - 'debug': mem/slub/debug.md'
+
+  - mem debug:
+    - 'debug:info': mem/debug/info.md'
+    - 'debug:kmemleak': mem/debug/kmemleak.md'
+
+  - performace: 
+      - 'Coding Experience': 'experience/performance.md'
+    
+    
+# - 驱动子系统:
+#   - 'dts': 'driver/dts.md'
+#   - 'clk': 'driver/clk.md'
+    
 #- Trace 系列: 
 #  - '新手初窥': 'debug/first_look.md'
 #  - 'ftrace-1:dynmaic ftrace': 'debug/ftrace-design.md'
@@ -76,6 +95,21 @@ nav:
 #  - 'trace-7:kprobe-events': 'debug/kprobe-events.md'
 #  - 'ftrace-tools': 'debug/ftrace_tools.md'
 #  - 'debug_objects': 'debug/debug_objects.md'
+    
+    
+#- 文件系统:
+#    - 'fs type': 'fs/fs_type_frame/fs_type.md'
+#    - 'fs context': 'fs/fs_type_frame/fs_context.md'
+#    - 'vfsconfig-1: fs parser': 'fs/fs_type_frame/fs_parser.md'
+#    - 'vfsconfig-2: mount config': 'fs/vfs/vfs_mount_config.md'
+#
+#- ARM异常机制: 
+#  - '简介': 'interrupt/index.md'
+#  - 'ARM64单CPU': 'interrupt/arm64.md'
+#- DFX工具系列:
+#  - 'log': 'debug/log.md'
+#  - 'gdb': 'debug/gdb.md'
+
 #- 经验总结: 
 #  - '启动时间优化': 'experience/start.md'
 #

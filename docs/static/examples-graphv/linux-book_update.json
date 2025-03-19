@@ -2,11 +2,11 @@
   "categories": {
     "config": "config",
     "log": "log",
+    "mem": "mem",
     "foundation": "foundation",
     "fs": "fs",
     "init": "init",
     "lib": "lib",
-    "mem": "mem",
     "test": "test"
   },
   "data": {
@@ -61,7 +61,7 @@
         "id": 4,
         "url": "https://linux-book.readthedocs.io/en/latest/./config/obsolate_param",
         "file_path": ".\\config\\obsolate_param.md",
-        "value": 5
+        "value": 6
       },
       {
         "label": "log",
@@ -76,6 +76,18 @@
         "value": 1
       },
       {
+        "label": "performance",
+        "categories": [
+          "mem"
+        ],
+        "info": "performance  skill",
+        "depends": [],
+        "id": 6,
+        "url": "https://linux-book.readthedocs.io/en/latest/./experience/performance",
+        "file_path": ".\\experience\\performance.md",
+        "value": 1
+      },
+      {
         "label": "kref",
         "categories": [
           "foundation"
@@ -84,7 +96,7 @@
         "depends": [
           "refcount"
         ],
-        "id": 6,
+        "id": 7,
         "url": "https://linux-book.readthedocs.io/en/latest/./foundation/kref",
         "file_path": ".\\foundation\\kref.md",
         "value": 1
@@ -96,7 +108,7 @@
         ],
         "info": "refcount",
         "depends": [],
-        "id": 7,
+        "id": 8,
         "url": "https://linux-book.readthedocs.io/en/latest/./foundation/refcnt",
         "file_path": ".\\foundation\\refcnt.md",
         "value": 2
@@ -110,9 +122,21 @@
         "depends": [
           "lock_dep"
         ],
-        "id": 8,
+        "id": 9,
         "url": "https://linux-book.readthedocs.io/en/latest/./foundation/rw_semaphore",
         "file_path": ".\\foundation\\rw_semaphore.md",
+        "value": 1
+      },
+      {
+        "label": "static_key",
+        "categories": [
+          "foundation"
+        ],
+        "info": "linux static_key jumtable",
+        "depends": [],
+        "id": 10,
+        "url": "https://linux-book.readthedocs.io/en/latest/./foundation/static_key",
+        "file_path": ".\\foundation\\static_key.md",
         "value": 1
       },
       {
@@ -124,7 +148,7 @@
         "depends": [
           ""
         ],
-        "id": 9,
+        "id": 11,
         "url": "https://linux-book.readthedocs.io/en/latest/./fs/core/dentry",
         "file_path": ".\\fs\\core\\dentry.md",
         "value": 1
@@ -139,7 +163,7 @@
           "fs_context",
           "rw_sem"
         ],
-        "id": 10,
+        "id": 12,
         "url": "https://linux-book.readthedocs.io/en/latest/./fs/core/super_block",
         "file_path": ".\\fs\\core\\super_block.md",
         "value": 3
@@ -161,7 +185,7 @@
           "usermodehelper",
           "ramfs"
         ],
-        "id": 11,
+        "id": 13,
         "url": "https://linux-book.readthedocs.io/en/latest/./fs/fs_type/rootfs",
         "file_path": ".\\fs\\fs_type\\rootfs.md",
         "value": 6
@@ -176,7 +200,7 @@
           "fs_type",
           "fs_context"
         ],
-        "id": 12,
+        "id": 14,
         "url": "https://linux-book.readthedocs.io/en/latest/./fs/fs_type/tmpfs",
         "file_path": ".\\fs\\fs_type\\tmpfs.md",
         "value": 3
@@ -192,7 +216,7 @@
           "refcount",
           "kalloc"
         ],
-        "id": 13,
+        "id": 15,
         "url": "https://linux-book.readthedocs.io/en/latest/./fs/fs_type_frame/fc_log",
         "file_path": ".\\fs\\fs_type_frame\\fc_log.md",
         "value": 4
@@ -207,7 +231,7 @@
           "fs_type",
           "fc_log"
         ],
-        "id": 14,
+        "id": 16,
         "url": "https://linux-book.readthedocs.io/en/latest/./fs/fs_type_frame/fs_context",
         "file_path": ".\\fs\\fs_type_frame\\fs_context.md",
         "value": 7
@@ -222,7 +246,7 @@
           "fc_log",
           "fs_context"
         ],
-        "id": 15,
+        "id": 17,
         "url": "https://linux-book.readthedocs.io/en/latest/./fs/fs_type_frame/fs_parser",
         "file_path": ".\\fs\\fs_type_frame\\fs_parser.md",
         "value": 3
@@ -237,7 +261,7 @@
           "fs_context",
           "super_block"
         ],
-        "id": 16,
+        "id": 18,
         "url": "https://linux-book.readthedocs.io/en/latest/./fs/fs_type_frame/fs_type",
         "file_path": ".\\fs\\fs_type_frame\\fs_type.md",
         "value": 4
@@ -252,7 +276,7 @@
           "fs_type",
           "fs_context"
         ],
-        "id": 17,
+        "id": 19,
         "url": "https://linux-book.readthedocs.io/en/latest/./fs/vfs/vfs_mount",
         "file_path": ".\\fs\\vfs\\vfs_mount.md",
         "value": 2
@@ -267,7 +291,7 @@
           "fs_parser",
           "fs_context"
         ],
-        "id": 18,
+        "id": 20,
         "url": "https://linux-book.readthedocs.io/en/latest/./fs/vfs/vfs_mount_config",
         "file_path": ".\\fs\\vfs\\vfs_mount_config.md",
         "value": 2
@@ -281,7 +305,7 @@
         "depends": [
           "kernel start"
         ],
-        "id": 19,
+        "id": 21,
         "url": "https://linux-book.readthedocs.io/en/latest/./init/initcall",
         "file_path": ".\\init\\initcall.md",
         "value": 3
@@ -293,7 +317,7 @@
         ],
         "info": "kernel start process",
         "depends": [],
-        "id": 20,
+        "id": 22,
         "url": "https://linux-book.readthedocs.io/en/latest/./init/start",
         "file_path": ".\\init\\start.md",
         "value": 5
@@ -305,7 +329,7 @@
         ],
         "info": "kernel decompress tool",
         "depends": [],
-        "id": 21,
+        "id": 23,
         "url": "https://linux-book.readthedocs.io/en/latest/./lib/decompress",
         "file_path": ".\\lib\\decompress.md",
         "value": 1
@@ -317,21 +341,9 @@
         ],
         "info": "mem basic concepts",
         "depends": [],
-        "id": 22,
+        "id": 24,
         "url": "https://linux-book.readthedocs.io/en/latest/./mem/index",
         "file_path": ".\\mem\\index.md",
-        "value": 1
-      },
-      {
-        "label": "mem_to_page",
-        "categories": [
-          "mem"
-        ],
-        "info": "mem page pfn mapping",
-        "depends": [],
-        "id": 23,
-        "url": "https://linux-book.readthedocs.io/en/latest/./mem/physical",
-        "file_path": ".\\mem\\physical.md",
         "value": 1
       },
       {
@@ -341,10 +353,25 @@
         ],
         "info": "page manager",
         "depends": [],
-        "id": 24,
+        "id": 25,
         "url": "https://linux-book.readthedocs.io/en/latest/./mem/physical2",
         "file_path": ".\\mem\\physical2.md",
         "value": 1
+      },
+      {
+        "label": "early_ioremap",
+        "categories": [
+          "mem"
+        ],
+        "info": "kernel early io remap",
+        "depends": [
+          "obsolate param",
+          "fixmap"
+        ],
+        "id": 26,
+        "url": "https://linux-book.readthedocs.io/en/latest/./mem/early_init/early_ioremap",
+        "file_path": ".\\mem\\early_init\\early_ioremap.md",
+        "value": 2
       },
       {
         "label": "fixmap",
@@ -355,10 +382,10 @@
         "depends": [
           "obsolate param"
         ],
-        "id": 25,
+        "id": 27,
         "url": "https://linux-book.readthedocs.io/en/latest/./mem/early_init/fixmap",
         "file_path": ".\\mem\\early_init\\fixmap.md",
-        "value": 2
+        "value": 3
       },
       {
         "label": "kernel_map",
@@ -367,7 +394,7 @@
         ],
         "info": "kernel mem map init",
         "depends": [],
-        "id": 26,
+        "id": 28,
         "url": "https://linux-book.readthedocs.io/en/latest/./mem/early_init/kernel_map",
         "file_path": ".\\mem\\early_init\\kernel_map.md",
         "value": 1
@@ -381,7 +408,7 @@
         "depends": [
           "memblock"
         ],
-        "id": 27,
+        "id": 29,
         "url": "https://linux-book.readthedocs.io/en/latest/./mem/early_init/line_map",
         "file_path": ".\\mem\\early_init\\line_map.md",
         "value": 1
@@ -396,7 +423,7 @@
           "obsolate param",
           "fixmap"
         ],
-        "id": 28,
+        "id": 30,
         "url": "https://linux-book.readthedocs.io/en/latest/./mem/early_init/memblock",
         "file_path": ".\\mem\\early_init\\memblock.md",
         "value": 4
@@ -408,7 +435,7 @@
         ],
         "info": "kernel unit test",
         "depends": [],
-        "id": 29,
+        "id": 31,
         "url": "https://linux-book.readthedocs.io/en/latest/./test/kunit",
         "file_path": ".\\test\\kunit.md",
         "value": 1
@@ -419,19 +446,19 @@
         "id": 1,
         "label": "depend",
         "from": 2,
-        "to": 20
+        "to": 22
       },
       {
         "id": 2,
         "label": "depend",
         "from": 2,
-        "to": 11
+        "to": 13
       },
       {
         "id": 3,
         "label": "depend",
         "from": 3,
-        "to": 20
+        "to": 22
       },
       {
         "id": 4,
@@ -443,13 +470,13 @@
         "id": 5,
         "label": "depend",
         "from": 3,
-        "to": 19
+        "to": 21
       },
       {
         "id": 6,
         "label": "depend",
         "from": 4,
-        "to": 20
+        "to": 22
       },
       {
         "id": 7,
@@ -460,170 +487,182 @@
       {
         "id": 8,
         "label": "depend",
-        "from": 6,
-        "to": 7
+        "from": 7,
+        "to": 8
       },
       {
         "id": 9,
         "label": "depend",
-        "from": 10,
-        "to": 14
+        "from": 12,
+        "to": 16
       },
       {
         "id": 10,
         "label": "depend",
-        "from": 10,
-        "to": 8
+        "from": 12,
+        "to": 9
       },
       {
         "id": 11,
         "label": "depend",
-        "from": 11,
+        "from": 13,
         "to": 4
       },
       {
         "id": 12,
         "label": "depend",
-        "from": 11,
+        "from": 13,
         "to": 2
       },
       {
         "id": 13,
         "label": "depend",
-        "from": 11,
-        "to": 20
+        "from": 13,
+        "to": 22
       },
       {
         "id": 14,
         "label": "depend",
-        "from": 11,
-        "to": 28
+        "from": 13,
+        "to": 30
       },
       {
         "id": 15,
         "label": "depend",
-        "from": 11,
-        "to": 19
+        "from": 13,
+        "to": 21
       },
       {
         "id": 16,
         "label": "depend",
-        "from": 11,
-        "to": 12
+        "from": 13,
+        "to": 14
       },
       {
         "id": 17,
         "label": "depend",
-        "from": 12,
-        "to": 16
+        "from": 14,
+        "to": 18
       },
       {
         "id": 18,
         "label": "depend",
-        "from": 12,
-        "to": 14
+        "from": 14,
+        "to": 16
       },
       {
         "id": 19,
         "label": "depend",
-        "from": 13,
+        "from": 15,
         "to": 5
       },
       {
         "id": 20,
         "label": "depend",
-        "from": 13,
-        "to": 7
+        "from": 15,
+        "to": 8
       },
       {
         "id": 21,
         "label": "depend",
-        "from": 14,
-        "to": 16
+        "from": 16,
+        "to": 18
       },
       {
         "id": 22,
         "label": "depend",
-        "from": 14,
-        "to": 13
+        "from": 16,
+        "to": 15
       },
       {
         "id": 23,
         "label": "depend",
-        "from": 15,
-        "to": 13
+        "from": 17,
+        "to": 15
       },
       {
         "id": 24,
-        "label": "depend",
-        "from": 15,
-        "to": 14
-      },
-      {
-        "id": 25,
-        "label": "depend",
-        "from": 16,
-        "to": 14
-      },
-      {
-        "id": 26,
-        "label": "depend",
-        "from": 16,
-        "to": 10
-      },
-      {
-        "id": 27,
         "label": "depend",
         "from": 17,
         "to": 16
       },
       {
+        "id": 25,
+        "label": "depend",
+        "from": 18,
+        "to": 16
+      },
+      {
+        "id": 26,
+        "label": "depend",
+        "from": 18,
+        "to": 12
+      },
+      {
+        "id": 27,
+        "label": "depend",
+        "from": 19,
+        "to": 18
+      },
+      {
         "id": 28,
         "label": "depend",
-        "from": 17,
-        "to": 14
+        "from": 19,
+        "to": 16
       },
       {
         "id": 29,
         "label": "depend",
-        "from": 18,
-        "to": 15
+        "from": 20,
+        "to": 17
       },
       {
         "id": 30,
         "label": "depend",
-        "from": 18,
-        "to": 14
+        "from": 20,
+        "to": 16
       },
       {
         "id": 31,
         "label": "depend",
-        "from": 19,
-        "to": 20
+        "from": 21,
+        "to": 22
       },
       {
         "id": 32,
         "label": "depend",
-        "from": 25,
+        "from": 26,
         "to": 4
       },
       {
         "id": 33,
         "label": "depend",
-        "from": 27,
-        "to": 28
+        "from": 26,
+        "to": 27
       },
       {
         "id": 34,
         "label": "depend",
-        "from": 28,
+        "from": 27,
         "to": 4
       },
       {
         "id": 35,
         "label": "depend",
-        "from": 28,
-        "to": 25
+        "from": 29,
+        "to": 30
+      },
+      {
+        "id": 36,
+        "label": "depend",
+        "from": 30,
+        "to": 4
+      },
+      {
+        "id": 37,
+        "label": "depend",
+        "from": 30,
+        "to": 27
       }
     ]
   }

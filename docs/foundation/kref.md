@@ -92,6 +92,6 @@ static inline void kref_init(struct kref *kref)
 
 !!! Note:
 
-    一般在`release callback`中实现需要上锁的部分，并解锁
+    一般在`release callback`中实现需要上锁的部分，并需要解锁
 
 #### use sample

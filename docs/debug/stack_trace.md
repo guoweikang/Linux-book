@@ -88,8 +88,6 @@ echo 1 > /proc/sys/kernel/stack_tracer_enabled
  17)      128     128   system_call_fastpath+0x16/0x1b
 ```
 
- 
-
 #### stack_trace_filter
 
 `set_ftrace_filter`类似 , 支持`filter`和 `command`语法，参考`ftrace filter`

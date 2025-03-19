@@ -9,58 +9,7 @@
 }
 ```
 
-### 介绍
-
-上一个小节 我们介绍了:  内存地址、`pfn`  , `page` 的互相映射关系，所以 内核分配物理页就是按照`vmemmap` 的布局管理和分配的吗？答案是并不是 
-
-不同于我们习惯的资源管理,如果是正常的资源使用管理，我们会使用上面那种结构吗？并不会，在强调一次，上一个小节的内容，主要是为了说明 **内核为内存页表提供了一个机制，可以快速从内存和page之间数据转换** ，`struct page`是静态资源，对应于
-
-### Node
-
-在介绍`NUMA`模型，我们提到过，`NUMA`把不同的内存区域,根据 `CPU`的距离，按照`NODE` 进行了区分，因此，首先
-内核根据物理内存的分布，应该把不同的物理内存在软件层面予以抽象，这个抽象就是 `struct pglist_data[NODE_NUM]`
-
-访问不同`NODE`节点的`pglist_data`，通过`NODE_DATA(id)` 访问
-
-```
-extern struct pglist_data *node_data[];
-#define NODE_DATA(nid)          (node_data[(nid)])
-```
-
-当然，如果你不支持`NUMA`，而是`UMP`模型，`contig_page_data` 是全局唯一的一个内存区 ，该方法被替换为
-
-```
-extern struct pglist_data contig_page_data;
-static inline struct pglist_data *NODE_DATA(int nid)
-{
-        return &contig_page_data;
-}
-```
-
-### ZONE
-
-理想情况下，内存中的所有`页`从功能上讲都是等价的，都可以用于任何目的，但现实却并非如此，
-例如一些DMA处理器只能访问固定范围内的地址空间 [参考](https://en.wikipedia.org/wiki/Direct_memory_access)
-
-因此内核将整个内存地址空间划分成了不同的区，每个区叫着一个 Zone, 每个 Zone 都有自己的用途。
-
-理解DMA的概念: 参考一些资料即可，介绍一下DMA解决什么问题，以及为什么DMA有内存访问的约束
-
-[内核关于DMA 的介绍](https://docs.kernel.org/core-api/dma-api-howto.html)
-
-请查询官网,看一下跟多关于ZONE的描述
-
-### pglist_data
-
-稀疏内存核心结构体: `struct pglist_data` 记录了每个 NUMA节点的内存布局，
-
-内核以链表形式把所有`页`串联起来，这个结构在内核中抽象为`struct pglist_data` ，有了之前的基础，现在可以简单看一下 `pglist_data`的内容了
-
-请查询官网,看一下跟多关于`pglist_data`的描述
-
-[其他参考](https://www.kernel.org/doc/gorman/html/understand/understand005.html)
-
-### 代码参考
+### 
 
 内存分区和布局初始化路径为:
 
@@ -95,31 +44,6 @@ static inline struct pglist_data *NODE_DATA(int nid)
 ```
 
 ### 示例参考
-
-黑芝麻的 DMA range :
-
-zone的初始化日志
-
-```
-[    0.000000] Zone ranges:
-[    0.000000]   DMA      [mem 0x00000000 1800 0000 - 0x0000 0000 ffff ffff]
-[    0.000000]   DMA32    empty
-[    0.000000]   Normal   [mem 0x00000001 0000 0000 - 0x0000 0001 efff ffff]
-[    0.000000] Movable zone start for each node
-[    0.000000] Early memory node ranges
-[    0.000000]   node   0: [mem 0x0000000018000000-0x00000000180fffff]
-[    0.000000]   node   0: [mem 0x0000000080000000-0x000000008affffff]
-[    0.000000]   node   0: [mem 0x000000008b000000-0x000000008cffffff]
-[    0.000000]   node   0: [mem 0x000000008d000000-0x000000008fcfffff]
-[    0.000000]   node   0: [mem 0x000000008fd00000-0x000000008fdfffff]
-[    0.000000]   node   0: [mem 0x000000008fe00000-0x000000008febffff]
-[    0.000000]   node   0: [mem 0x000000008fec0000-0x00000000b1ffffff]
-[    0.000000]   node   0: [mem 0x00000000b2000000-0x00000000efffffff]
-[    0.000000]   node   0: [mem 0x0000000198000000-0x00000001efffffff]
-[    0.000000] mminit::memmap_init Initialising map node 0 zone 0 pfns 98304（18000000 >> 12） -> 1048576（ffff ffff >> 12） //对应DMA ZONE 
-[    0.000000] mminit::memmap_init Initialising map node 0 zone 2 pfns 1048576(100000000 >> 12) -> 2031616（1 efff ffff >> 12） //对应NORMAL ZONE 
-[    0.000000] On node 0 totalpages: 819456(3201M  对应所有memblock的mem)
-```
 
 ## 物理内存分配
 

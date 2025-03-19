@@ -126,62 +126,6 @@
 
 这里我们关注`funcs` 他是一个数组， 每个 `tracepoint` 允许注册多个回调函数
 
-#### Static Key
-
-既然`probe func` 是在编译期间就已经编译到执行代码段的，那如何实现动态启用呢？
-
-[官方介绍](https://www.kernel.org/doc/Documentation/static-keys.txt)
-
-动机需求： 频繁的`if else` 语句会造成一些性能损失, 比如  `likely/unlikely`  专门为此实现了优化, 可以参考，  [c - How do the likely/unlikely macros in the Linux kernel work and what is their benefit? - Stack Overflow](https://stackoverflow.com/questions/109710/how-do-the-likely-unlikely-macros-in-the-linux-kernel-work-and-what-is-their-ben) ，核心就是通过修改编译后的汇编执行顺序(使用 `jne` or  `je`?)，让可能性更高的分支 可以被CPU 利用提前预加载 加载(一旦进入意外情况，需要刷新流水线)； 但是`trace func`动态开启和关闭 并不是一个固定的 可能性事件，但是一旦开启以后，行为就像是 `likely` 否则就像是 `unlikely` ，不能单纯的使用`linkey unlikely`机制优化
-
-如何实现？ 当条件成立的时候，把代码跳转到为`true`的分支，否则跳转到 `false`的分支，依赖于条件当时的情况
-
-细节参考[jump label](https://blog.csdn.net/dog250/article/details/106715700) 
-
-```c
-  struct static_key {
-          atomic_t enabled;
-  /*
-   * Note:
-   *   To make anonymous unions work with old compilers, the static 
-   *   initialization of them requires brackets. This creates a dependency
-   *   on the order of the struct with the initializers. If any fields
-   *   are added, STATIC_KEY_INIT_TRUE and STATIC_KEY_INIT_FALSE may need
-   *   to be modified.
-   *              
-   * bit 0 => 1 if key is initially true
-   *          0 if initially false
-   * bit 1 => 1 if points to struct static_key_mod
-   *          0 if points to struct jump_entry
-   */
-          union {
-                  unsigned long type;
-                  struct jump_entry *entries;
-                  struct static_key_mod *next;
-          };
-  };
-
- struct jump_entry {
-          s32 code;
-          s32 target;
-          long key;       // key may be far away from the core kernel under KASLR
-  };
-
-    static inline struct jump_entry *static_key_entries(struct static_key *key)
-  {
-          WARN_ON_ONCE(key->type & JUMP_TYPE_LINKED);
-          return (struct jump_entry *)(key->type & ~JUMP_TYPE_MASK);
-  }
-```
-
-几个非常重要的接口:
-
-- `static_key_false/static_key_true`: 编译期间，会把当前代码段 封装为 entry 然后塞进到`jump_table`, 对于初始值为 TRUE的，使用`if static_key_true` 作为`key = true`的判断，否则 使用`if static_key_false`作为`key = true`的判断
-
-- `enable_jump_label`: 当在使能  `staticl key`时候，遍历 `jump_table` 实现代码修改替换
-
-更多 内容参考[static key](https://www.kernel.org/doc/Documentation/static-keys.txt)
-
 #### 使用声明宏定义: tracepoint
 
 首先 需要定义 `tracepoint` ，定义需要单独头文件定义，路径一般为 `include/trace/events/subsys.h`  一般内容格式为 ： 
