@@ -6,6 +6,7 @@
     "categories": ["foundation"],
     "info": "linux rw_semaphore ",
     "depends": [
+         "foundation",
          "lock_dep"
     ]
 }

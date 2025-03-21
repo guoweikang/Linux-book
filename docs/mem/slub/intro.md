@@ -11,6 +11,10 @@ node" {
 }
 ```
 
+ 
+
+
+
 ### 介绍
 
 #### 回顾和背景介绍
@@ -82,21 +86,15 @@ Each `kmem_cache` represents a wholesaler of a product.![](../image/kmem_cache-1
 
 For example, if the  object memory size we sell is `128Byte`, if we apply for one page (`4KB`) each time, then we have `32` memory objects that can be sold, if we apply for two pages, then we have `64 `memory objects that can be sold. 
 
-
-
 #### kmem_cache_cpu
 
 Assume user want to buy an object from the wholesalers(`kmem_cache` ) ,   and then `kmem_cache`  might  get a free object from `slub`   , but on SMP machine, if muti task from different cpu  alloc the same mem object,  we must use a lock to protect `slub` or `kmem_cache` .
 
 So `kmee_cache`   would put  a `slab` into  `kmem_cache_cpu`,customer from `kmem_cache_cpu`  to get object.  when `kmem_cache_cpu` is empty, we put a new slab into it.
 
-
-
 ##### kmem_cache_node
 
 This is not common,  only on a `NUMA` machine we need to consider.
-
-
 
 In the NUMA architecture, we need to distinguish the memory from different nodes.
 
@@ -104,22 +102,4 @@ But it doesn't like  diferent  `kmem_cache` , different `kmem_cache` means they 
 
 The same type of  mem object allow alloc  from other nodes( If we don't specify a specific node). 
 
-
-
 So each `kmem_cache`  also store node's  `slubs`  in  `kmem_cache_node`
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

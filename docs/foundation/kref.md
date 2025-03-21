@@ -5,7 +5,10 @@
     "label": "kref",
     "categories": ["foundation"],
     "info": "kernel refcount",
-    "depends": ["refcount"]
+    "depends": [
+        "refcount",
+        "foundation"
+    ]
 }
 ```
 
