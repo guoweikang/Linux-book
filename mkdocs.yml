@@ -31,7 +31,7 @@ nav:
     - 'gdb调试qemu': 'intro/gdb.md'
   - Basci:
     - 'Introduction': 'foundation/intro.md'
-    - 'Locl introduction': 'foundation/lock.md'
+    - 'Lock introduction': 'foundation/lock.md'
     - 'atomic': 'foundation/atomic.md'
     - 'refcont': 'foundation/refcnt.md'
     - 'kref': 'foundation/kref.md'
